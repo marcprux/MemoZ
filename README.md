@@ -1,4 +1,4 @@
-# μmemo – micro-memoization with Swift value types
+# Swift μmemo – micro-memoization
 
 μmemo is a very simple memoization library that caches the the result of a pure function or calculated property for any Hashable value type. It uses `NSCache` to automatically purge memozied values.
 
