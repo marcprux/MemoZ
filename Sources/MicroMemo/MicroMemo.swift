@@ -219,7 +219,7 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
 // MARK: Utilities
 
 /// Expects that the given parameter is non-nil, and logs an error when it is nil. This can be used as a breakpoint for identifying unexpected nils without failing an assertion.
-@inlinable public func expecting<T>(_ value: T?, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) -> T? {
+@usableFromInline func expecting<T>(_ value: T?, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) -> T? {
 //    if value == nil {
 //        dbg("unexpected empty value for", T.self, functionName: functionName, fileName: fileName, lineNumber: lineNumber)
 //    }
@@ -229,14 +229,14 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
 
 /// A reference wrapper around another type; this will typically be used to provide reference semantics for value types
 /// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-public final class Ref<T> : RawRepresentable {
+final class Ref<T> : RawRepresentable {
     public var rawValue: T
     @inlinable public init(rawValue v: T) { rawValue = v }
 }
 
 /// A box type that permits copy-on-write semantics for value types
 /// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-public struct Box<T> {
+struct Box<T> {
     @usableFromInline var ref : Ref<T>
     @inlinable public init(_ x : T) { ref = Ref(rawValue: x) }
 
@@ -259,30 +259,6 @@ extension Box : Equatable where T : Equatable { }
 extension Ref : Hashable where T : Hashable { }
 
 extension Box : Hashable where T : Hashable { }
-
-extension Ref : Encodable where T : Encodable {
-    @inlinable public func encode(to encoder: Encoder) throws {
-        try rawValue.encode(to: encoder)
-    }
-}
-
-extension Box : Encodable where T : Encodable {
-    @inlinable public func encode(to encoder: Encoder) throws {
-        try value.encode(to: encoder)
-    }
-}
-
-extension Ref : Decodable where T : Decodable {
-    @inlinable public convenience init(from decoder: Decoder) throws {
-        try self.init(rawValue: T(from: decoder))
-    }
-}
-
-extension Box : Decodable where T : Decodable {
-    @inlinable public init(from decoder: Decoder) throws {
-        try self.init(T(from: decoder))
-    }
-}
 
 /// A reference that can be used as a cache key for `NSCache` that wraps a value type.
 /// Simply using a `Ref` doesn't work (for unknown reasons).
