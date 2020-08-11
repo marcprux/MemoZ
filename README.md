@@ -1,13 +1,21 @@
-# MicroMemo
+# μmemo – micro-memoization with Swift value types
 
-A simple memoization library that can memoize the the result of a pure function or calculated property on any Hashable instance.
+μmemo is a very simple memoization library that can memoize the the result of a pure function or calculated property on any Hashable instance. It uses `NSCache` to automatically purge memozied values.
+
+
+## Setup
+If you're running an Xcode project:
+
+  1. select `File` -> `Swift packages` -> `Add Package Dependency...`,
+  2. add this repo's git file `git@github.com:marcprux/MicroMemo.git` 
+  3. use `master` or pin the appropriate version
+  4. add `import MicroMemo`
+
+## Sample usage:
 
 For example:
 
 ```swift
-/// Import MicroMemo with:
-/// Xcode > File > Swift Packages > Add Package Dependency…
-/// https://github.com/marcprux/MicroMemo.git
 import MicroMemo
 
 extension Sequence where Element : Numeric {
