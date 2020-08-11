@@ -73,4 +73,7 @@ XCTAssertNotEqual((1...10).memoize(\.lowerBound), (1...10).memoize(\.upperBound)
 
 In general, try to avoid making multiple calls to memoize on the same line and this problem will be avoided.
 
+This problem is unlikely to ever be fixed; discussion of the issue can take place at: [https://github.com/marcprux/MicroMemo/issues/1]
+
+
 
