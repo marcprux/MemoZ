@@ -1,2 +1,3 @@
 # MicroMemo
-μmemo – memoize pure functions in Swift
+
+A description of this package.
