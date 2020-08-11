@@ -50,7 +50,7 @@ extension Hashable {
     /// - Parameters:
     ///   - cache: the shared cache to use; `nil` disables caching and simply returns the result of `predicate` directly
     ///   - sourceIdentifier: the source identifier; this is automatically filled in with the calling source code file, but customization can be performed to control the cache key
-    ///   - sourceIndex: the index in the source identifier; this is automatically filled in with the calling source line, but customiztion can be performed to control the cache key (e.g., to avoid collision for multiple same-line calls)
+    ///   - sourceIndex: the index in the source identifier; this is automatically filled in with the calling source line, but customization can be performed to control the cache key (e.g., to avoid collision for multiple same-line calls)
     ///   - predicate: the function to execute with the predicate; it may be called zero or more times, and it must be a pure function (no references to other state; always repeatable with the same arguments, no side-effects)
     ///
     /// - Throws: re-throws and errors from `predicate`
