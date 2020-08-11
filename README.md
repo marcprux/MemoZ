@@ -57,14 +57,17 @@ Since the cache is keyed on the source code file & line, it is possible to trick
 For example, the following test will pass:
 
 ```swift
-        XCTAssertNotEqual((1...10).memoize(\.lowerBound),
-                          (1...10).memoize(\.upperBound))
+// same subject & different predicate: works fine…
+XCTAssertNotEqual((1...10).memoize(\.lowerBound),
+                  (1...10).memoize(\.upperBound))
 ```
 
 But the same test compressed onto a single line will actually fail:
 
 ```
-        XCTAssertNotEqual((1...10).memoize(\.lowerBound), (1...10).memoize(\.upperBound))
+// …same subject & different predicate one the same line: fails!
+XCTAssertNotEqual((1...10).memoize(\.lowerBound), (1...10).memoize(\.upperBound)) // failed: 1 is equal to 1
+
 ```
 
 
