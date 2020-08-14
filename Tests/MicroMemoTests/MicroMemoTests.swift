@@ -42,4 +42,18 @@ final class SummingTests: XCTestCase {
         XCTAssertEqual(3, (str as String).mmz.count)
         XCTAssertEqual("Xyz", (str as NSString).mmz.capitalized) // we should get a deprecation warning here
     }
+
+    func testCachePartition() {
+        let uuids = (0...100_000).map({ _ in UUID() })
+        measure {
+            // the following two calls are the same, except the second one uses a partitioned cache
+            XCTAssertEqual(3800038, uuids.mmz.description.count)
+            XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
+        }
+    }
+}
+
+extension MemoizationCache {
+    /// A domain-specific cache
+    static let domainCache = MemoizationCache()
 }

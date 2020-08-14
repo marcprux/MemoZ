@@ -1,21 +1,8 @@
 # Swift μmemo – micro-memoization
 
-μmemo is a very simple memoization library that caches the the result of a pure function or calculated property for any Hashable value type. It uses `NSCache` to automatically purge memozied values.
-
-
-## Setup
-If you're running an Xcode project:
-
-  1. select `File` -> `Swift packages` -> `Add Package Dependency...`,
-  2. add this repo's git file `git@github.com:marcprux/MicroMemo.git` 
-  3. use `master` or pin the appropriate version
-  4. add `import MicroMemo`
-
-## Sample usage:
-
 MicroMemo provides an extension to `Hashable` with the property **`mmz`**, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.mmz.expensiveCalculation`.
 
-For example:
+## Sample usage:
 
 ```swift
 import MicroMemo
@@ -53,6 +40,33 @@ Wikipedia describes the technique of [memoization](https://en.wikipedia.org/wiki
 > Memoization is a way to lower a function's time cost in exchange for space cost; that is, memoized functions become optimized for speed in exchange for a higher use of computer memory space. The time/space "cost" of algorithms has a specific name in computing: computational complexity. All functions have a computational complexity in time (i.e. they take time to execute) and in space.
 
 
+## Setup
+If you're running an Xcode project:
+
+  1. select `File` -> `Swift packages` -> `Add Package Dependency...`,
+  2. add this repo's git file `git@github.com:marcprux/MicroMemo.git` 
+  3. use `master` or pin the appropriate version
+  4. add `import MicroMemo`
+
+## Other Features:
+
+MicoMemo also provides a `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference types for keys and values). Memoization caches can be partitioned into separate global caches like so:
+
+```swift
+extension MemoizationCache {
+    /// A domain-specific cache
+    static let domainCache = MemoizationCache()
+}
+
+func testCachePartition() {
+    let uuids = (0...100_000).map({ _ in UUID() }) // a bunch of random strings
+    measure {
+        // the following two calls are the same, except the second one uses a custom cache rather than the default global cache
+        XCTAssertEqual(3800038, uuids.mmz.description.count)
+        XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
+    }
+}
+```
 
 ## Implementation Details:
 

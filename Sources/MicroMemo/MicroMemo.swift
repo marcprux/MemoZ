@@ -14,11 +14,13 @@ import Foundation
 /// - Note: this ideally would be a static stored property on `T`, but Swift doesn't support static stored properties on generic types.
 /// - Seealso: https://stackoverflow.com/questions/37963327/what-is-a-good-alternative-for-static-stored-properties-of-generic-types-in-swif
 @available(OSX 10.12, iOS 12, *)
-public typealias MemoizationCache = Cache<SourceLocationCacheKey, Any>
+public typealias MemoizationCache = Cache<MemoizationCacheKey, Any>
 
 /// A key for memoization that uses an arbitrary `Hashable` instance as well as the source code location (file name & line number) to uniquely identify a cache reference point.
-public struct SourceLocationCacheKey : Hashable {
+public struct MemoizationCacheKey : Hashable {
+    /// The subject of the memoization call
     let subject: AnyHashable
+    /// The key path for the call
     let keyPath: AnyKeyPath
 
     /// Internal-only key init – keys should be created only via `Hashable.memoize`
