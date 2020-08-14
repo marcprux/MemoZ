@@ -36,4 +36,10 @@ final class SummingTests: XCTestCase {
         XCTAssertEqual(false, 1002.mmz.isPrime)
 
     }
+
+    func testValueTypes() {
+        let str = "xyz" as NSString
+        XCTAssertEqual(3, (str as String).mmz.count)
+        XCTAssertEqual("Xyz", (str as NSString).mmz.capitalized) // we should get a deprecation warning here
+    }
 }

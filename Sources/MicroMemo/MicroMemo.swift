@@ -81,8 +81,9 @@ public extension Hashable {
 }
 
 public extension Hashable where Self : AnyObject {
-    /// `memoize` should onky be used on value types.
-    var mmz: Void { () }
+    /// `memoize` should only be used on value types. It is permitted but discouraged.
+    @available(*, deprecated, message: "memoize should not be used with reference types")
+    @inlinable var mmz: Memoizer<Self> { Memoizer(value: self) }
 }
 
 /// A pass-through instance that memoizes the result of the given key path.
