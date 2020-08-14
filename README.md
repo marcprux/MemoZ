@@ -1,6 +1,6 @@
 # Swift μmemo – micro-memoization
 
-MicroMemo provides an extension to `Hashable` with the property **`mmz`**, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.mmz.expensiveCalculation`.
+MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.memoz.expensiveCalculation`.
 
 ## Sample usage:
 
@@ -12,7 +12,7 @@ extension Sequence where Element : Numeric {
     var sum: Element { reduce(0, +) }
 
     /// Same as above, but also caches the result
-    var summemo: Element { mmz.sum }
+    var summemo: Element { memoz.sum }
 }
 
 class MicroMemoDemo: XCTestCase {
@@ -62,7 +62,7 @@ func testCachePartition() {
     let uuids = (0...100_000).map({ _ in UUID() }) // a bunch of random strings
     measure {
         // the following two calls are the same, except the second one uses a custom cache rather than the default global cache
-        XCTAssertEqual(3800038, uuids.mmz.description.count)
+        XCTAssertEqual(3800038, uuids.memoz.description.count)
         XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
     }
 }
@@ -86,7 +86,7 @@ extension BidirectionalCollection {
 }
 
 /// `Result.get` is used to convert `Result.failure` into a thrown error
-XCTAssertThrowsError(try emptyArray.mmz.firstAndLast.get())
+XCTAssertThrowsError(try emptyArray.memoz.firstAndLast.get())
 ```
 
 

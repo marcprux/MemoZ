@@ -21,9 +21,9 @@ extension BinaryInteger where Self.Stride : SignedInteger {
 final class SummingTests: XCTestCase {
     func testSum() {
         XCTAssertEqual(15, (1...5).sum)
-        XCTAssertEqual(15, (1...5).mmz.sum)
+        XCTAssertEqual(15, (1...5).memoz.sum)
         XCTAssertEqual(120, (1...5).product)
-        XCTAssertEqual(120, (1...5).mmz.product)
+        XCTAssertEqual(120, (1...5).memoz.product)
         XCTAssertEqual(true, 87178291199.isPrime)
 
         XCTAssertEqual(false, UInt64(3314192745739 - 1).isPrime)
@@ -33,27 +33,27 @@ final class SummingTests: XCTestCase {
         //XCTAssertEqual(true, UInt64(3331113965338635107).isPrime) // 1,133 seconds!
         XCTAssertEqual(false, 1002.isPrime)
 
-        XCTAssertEqual(false, 1002.mmz.isPrime)
+        XCTAssertEqual(false, 1002.memoz.isPrime)
 
     }
 
     func testValueTypes() {
         let str = "xyz" as NSString
-        XCTAssertEqual(3, (str as String).mmz.count)
-        XCTAssertEqual("Xyz", (str as NSString).mmz.capitalized) // we should get a deprecation warning here
+        XCTAssertEqual(3, (str as String).memoz.count)
+        XCTAssertEqual("Xyz", (str as NSString).memoz.capitalized) // we should get a deprecation warning here
     }
 
     func testCachePartition() {
         let uuids = (0...100_000).map({ _ in UUID() })
         measure {
             // the following two calls are the same, except the second one uses a partitioned cache
-            XCTAssertEqual(3800038, uuids.mmz.description.count)
+            XCTAssertEqual(3800038, uuids.memoz.description.count)
             XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
         }
     }
 
     func testErrorHandling() {
-        XCTAssertThrowsError(try Array<Bool>().mmz.firstAndLast.get())
+        XCTAssertThrowsError(try Array<Bool>().memoz.firstAndLast.get())
     }
 
 }

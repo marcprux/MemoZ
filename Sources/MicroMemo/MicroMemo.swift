@@ -79,13 +79,13 @@ public extension Hashable {
     /// `memoize`s the result of the subsequent path in a global cache.
     /// - Returns: the cached or uncached key path
     /// - Note: Should only be used with value types and functionally-pure key paths
-    @inlinable var mmz: Memoizer<Self> { Memoizer(value: self) }
+    @inlinable var memoz: Memoizer<Self> { Memoizer(value: self) }
 }
 
 public extension Hashable where Self : AnyObject {
     /// `memoize` should only be used on value types. It is permitted but discouraged.
     @available(*, deprecated, message: "memoize should not be used with reference types")
-    @inlinable var mmz: Memoizer<Self> { Memoizer(value: self) }
+    @inlinable var memoz: Memoizer<Self> { Memoizer(value: self) }
 }
 
 /// A pass-through instance that memoizes the result of the given key path.
