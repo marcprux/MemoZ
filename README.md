@@ -68,6 +68,30 @@ func testCachePartition() {
 }
 ```
 
+## Error Handling:
+
+MicroMemo uses the keyPath as a key for the cache, and as such, need to be performed with calculated properties (typically implemented via extensions). Properties cannot throw errors, but error caching can be done using the `Result` type. For example:
+
+```swift
+extension BidirectionalCollection {
+    /// Returns the first and last element of this collection, or else an error if the collection is empty
+    var firstAndLast: Result<(Element, Element), Error> {
+        Result {
+            guard let first = first else {
+                throw CocoaError(.coderValueNotFound)
+            }
+            return (first, last ?? first)
+        }
+    }
+}
+
+/// `Result.get` is used to convert `Result.failure` into a thrown error
+XCTAssertThrowsError(try emptyArray.mmz.firstAndLast.get())
+```
+
+
+
+
 ## Implementation Details:
 
 μmemo is a coarse-grained caching library that maintains a **single global cache** keyed by the key path. As such, it *just works* for most cases, but care must be taken that:

@@ -51,9 +51,26 @@ final class SummingTests: XCTestCase {
             XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
         }
     }
+
+    func testErrorHandling() {
+        XCTAssertThrowsError(try Array<Bool>().mmz.firstAndLast.get())
+    }
+
 }
 
 extension MemoizationCache {
     /// A domain-specific cache
     static let domainCache = MemoizationCache()
+}
+
+extension BidirectionalCollection {
+    /// Returns the first and last element of this collection, or else an error if the collection is empty
+    var firstAndLast: Result<(Element, Element), Error> {
+        Result {
+            guard let first = first else {
+                throw CocoaError(.coderValueNotFound)
+            }
+            return (first, last ?? first)
+        }
+    }
 }
