@@ -13,7 +13,7 @@ If you're running an Xcode project:
 
 ## Sample usage:
 
-MicroMemo provides an extension to `Hashable` with the property `mmz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.mmz.expensiveCalculation`.
+MicroMemo provides an extension to `Hashable` with the property **`mmz`**, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.mmz.expensiveCalculation`.
 
 For example:
 
