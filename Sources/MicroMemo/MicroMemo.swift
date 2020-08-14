@@ -19,12 +19,14 @@ public typealias MemoizationCache = Cache<SourceLocationCacheKey, Any>
 /// A key for memoization that uses an arbitrary `Hashable` instance as well as the source code location (file name & line number) to uniquely identify a cache reference point.
 public struct SourceLocationCacheKey : Hashable {
     let line: Int
+    let column: Int
     let file: String
     let subject: AnyHashable
 
     /// Internal-only key init – keys should be created only via `Hashable.memoize`
-    @usableFromInline internal init(line: Int, file: String, subject: AnyHashable) {
+    @usableFromInline internal init(line: Int, column: Int, file: String, subject: AnyHashable) {
         self.line = line
+        self.column = column
         self.file = file
         self.subject = subject
     }
@@ -56,14 +58,14 @@ extension Hashable {
     /// - Throws: re-throws and errors from `predicate`
     /// - Returns: the result from the `predicate`, either a previously cached value, or the result of executing the `predicate`
     @available(OSX 10.12, iOS 12, *)
-    @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, sourceIdentifier file: String = #file, sourceIndex line: Int = #line, _ predicate: (Self) throws -> T) rethrows -> T {
+    @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, sourceIdentifier file: String = #file, sourceIndex line: Int = #line, sourceOffset column: Int = #column, _ predicate: (Self) throws -> T) rethrows -> T {
 
         // specifying a nil cache is a mechanism for bypassing caching altogether
         guard let cache = cache else {
             return try predicate(self)
         }
 
-        let cacheKey = MemoizationCache.Key(line: line, file: file, subject: self)
+        let cacheKey = MemoizationCache.Key(line: line, column: column, file: file, subject: self)
         // dbg(cacheKey)
 
         // note exclusive=false to reduce locking overhead; this does mean that multiple threads might simultaneously memoize the same result, but the benefits of faster cache reads later outweighs the unlikly change of multiple simultaneous cache hits
