@@ -72,6 +72,33 @@ extension Hashable {
     }
 }
 
+
+public extension Hashable {
+    /// `memoize`s the result of the subsequent path in a global cache.
+    /// - Returns: the cached or uncached key path
+    /// - Note: Should only be used with value types and functionally-pure key paths
+    @inlinable var mmz: Memoizer<Self> { Memoizer(value: self) }
+}
+
+public extension Hashable where Self : AnyObject {
+    /// `memoize` should onky be used on value types.
+    var mmz: Void { () }
+}
+
+/// A pass-through instance that memoizes the result of the given key path.
+@dynamicMemberLookup public struct Memoizer<Value: Hashable> {
+    private(set) var value: Value
+
+    @usableFromInline init(value: Value) {
+        self.value = value
+    }
+
+    @available(OSX 10.12, iOS 12, *)
+    public subscript<T>(dynamicMember keyPath: KeyPath<Value, T>) -> T {
+        value.memoize(keyPath)
+    }
+}
+
 extension Hashable where Self : AnyObject {
     /// Using `memoize` with reference types is technically possible, but is considered a mis-use of the framework.
     /// This warning can be bypassed by specifying the `cache` argument, in which case the method will use `Hashable.memoize`.

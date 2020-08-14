@@ -34,7 +34,7 @@ class MicroMemoDemo: XCTestCase {
     /// Test that the sum of -1M through +1M is zero. Memozied for a 10x win!
     func testMemoizedSum() throws {
         measure { // average: 0.130, relative standard deviation: 299.947%
-            XCTAssertEqual((-1_000_000...1_000_000).memoize(\.sum), 0)
+            XCTAssertEqual((-1_000_000...1_000_000).mmz.sum, 0)
         }
     }
 }
@@ -44,7 +44,7 @@ class MicroMemoDemo: XCTestCase {
 
 ## Details:
 
-μmemo is a coarse-grained caching library that maintains a **single global cache** keyed by the **source code location** of calling code. As such, it *just works* for most cases, but care must be taken that:
+μmemo is a coarse-grained caching library that maintains a **single global cache** keyed by the key path. As such, it *just works* for most cases, but care must be taken that:
 
  1. the target item is a `Hashable` value type 
  2. the predicate keyPath is pure
