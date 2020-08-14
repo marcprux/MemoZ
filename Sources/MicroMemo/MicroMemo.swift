@@ -18,17 +18,13 @@ public typealias MemoizationCache = Cache<SourceLocationCacheKey, Any>
 
 /// A key for memoization that uses an arbitrary `Hashable` instance as well as the source code location (file name & line number) to uniquely identify a cache reference point.
 public struct SourceLocationCacheKey : Hashable {
-    let line: Int
-    let column: Int
-    let file: String
     let subject: AnyHashable
+    let keyPath: AnyKeyPath
 
     /// Internal-only key init – keys should be created only via `Hashable.memoize`
-    @usableFromInline internal init(line: Int, column: Int, file: String, subject: AnyHashable) {
-        self.line = line
-        self.column = column
-        self.file = file
+    @usableFromInline internal init(subject: AnyHashable, keyPath: AnyKeyPath) {
         self.subject = subject
+        self.keyPath = keyPath
     }
 }
 
@@ -51,30 +47,28 @@ extension Hashable {
     ///
     /// - Parameters:
     ///   - cache: the shared cache to use; `nil` disables caching and simply returns the result of `predicate` directly
-    ///   - sourceIdentifier: the source identifier; this is automatically filled in with the calling source code file, but customization can be performed to control the cache key
-    ///   - sourceIndex: the index in the source identifier; this is automatically filled in with the calling source line, but customization can be performed to control the cache key (e.g., to avoid collision for multiple same-line calls)
-    ///   - predicate: the function to execute with the predicate; it may be called zero or more times, and it must be a pure function (no references to other state; always repeatable with the same arguments, no side-effects)
+    ///   - predicate: the key path; it may be called zero or more times, and it must be a pure function (no references to other state; always repeatable with the same arguments, no side-effects)
     ///
     /// - Throws: re-throws and errors from `predicate`
     /// - Returns: the result from the `predicate`, either a previously cached value, or the result of executing the `predicate`
     @available(OSX 10.12, iOS 12, *)
-    @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, sourceIdentifier file: String = #file, sourceIndex line: Int = #line, sourceOffset column: Int = #column, _ predicate: (Self) throws -> T) rethrows -> T {
+    @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, T>) -> T {
 
         // specifying a nil cache is a mechanism for bypassing caching altogether
         guard let cache = cache else {
-            return try predicate(self)
+            return self[keyPath: keyPath]
         }
 
-        let cacheKey = MemoizationCache.Key(line: line, column: column, file: file, subject: self)
+        let cacheKey = MemoizationCache.Key(subject: self, keyPath: keyPath)
         // dbg(cacheKey)
 
         // note exclusive=false to reduce locking overhead; this does mean that multiple threads might simultaneously memoize the same result, but the benefits of faster cache reads later outweighs the unlikly change of multiple simultaneous cache hits
-        let cacheValue = try cache.fetch(key: cacheKey, exclusive: false) { _ in
-            try predicate(self)
+        let cacheValue = cache.fetch(key: cacheKey, exclusive: false) { _ in
+            self[keyPath: keyPath]
         }
 
         // we use `expecting` so we drop into a breakpoint when the value is unexpected (which shouldn't generally happen, but could be a result of mis-using the `memoize` (e.g., within a generic function)).
-        return try expecting(cacheValue as? T) ?? predicate(self) // fallback to direct execution in case something goes wrong with the cache
+        return expecting(cacheValue as? T) ?? self[keyPath: keyPath] // fallback to direct execution in case something goes wrong with the cache
     }
 }
 
@@ -82,8 +76,8 @@ extension Hashable where Self : AnyObject {
     /// Using `memoize` with reference types is technically possible, but is considered a mis-use of the framework.
     /// This warning can be bypassed by specifying the `cache` argument, in which case the method will use `Hashable.memoize`.
     @available(*, deprecated, message: "memoize should not be used with reference types")
-    public func memoize<T>(sourceIdentifier file: String = #file, sourceIndex line: Int = #line, _ predicate: (Self) throws -> T) rethrows -> T {
-        try predicate(self) // just execute the predicate directly without any caching
+    public func memoize<T>(_ keyPath: KeyPath<Self, T>) -> T {
+        self[keyPath: keyPath]
     }
 }
 

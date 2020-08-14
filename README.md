@@ -47,33 +47,5 @@ class MicroMemoDemo: XCTestCase {
 μmemo is a coarse-grained caching library that maintains a **single global cache** keyed by the **source code location** of calling code. As such, it *just works* for most cases, but care must be taken that:
 
  1. the target item is a `Hashable` value type 
- 2. the predicate function/calculation is pure
+ 2. the predicate keyPath is pure
  3. the result of the function/property is a value type
-
-## Gotchas:
-
-Since the cache is keyed on the source code file & line, it is possible to trick the cache to return the wrong value by including two calls to `memoize` on the same source code line with the same subject.
-
-For example, the following test will pass:
-
-```swift
-// same subject & different predicate: works fine…
-XCTAssertNotEqual((1...10).memoize(\.lowerBound),
-                  (1...10).memoize(\.upperBound))
-```
-
-But the same test compressed onto a single line will actually fail:
-
-```
-// …same subject & different predicate one the same line: fails!
-XCTAssertNotEqual((1...10).memoize(\.lowerBound), (1...10).memoize(\.upperBound)) // failed: 1 is equal to 1
-
-```
-
-
-In general, try to avoid making multiple calls to memoize on the same line and this problem will be avoided.
-
-This problem is unlikely to ever be fixed; discussion of the issue can take place at: [https://github.com/marcprux/MicroMemo/issues/1]
-
-
-
