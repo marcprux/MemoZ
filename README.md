@@ -1,6 +1,6 @@
 # Swift μmemo – micro-memoization
 
-MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.memoz.expensiveCalculation` so that subsequent invocations are fast.
+MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to `x.expensiveCalculation` can be memoized simply by interleaving the `memoz`: `x.memoz.expensiveCalculation`, and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
 
 ## Sample usage
 
@@ -47,7 +47,7 @@ If you're running an Xcode project:
   4. add `import MicroMemo`
 
 
-## Error Handling:
+## Error Handling
 
 MicroMemo uses the keyPath as a key for the memoization cache, and as such, need to be performed with calculated properties (which can be implemented via extensions). Property accessors cannot throw errors, but error handling can be accomplished using the `Result` type. For example:
 
@@ -83,7 +83,7 @@ Forcing the calculation to be performed in a named property solves #1, and, whil
 
 ## Parameterizing Memoization
 
-Although you cann memoize an arbitrary function call, you can parameterize the memoization calculation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
+Although you cannot memoize an arbitrary function call, you can parameterize the memoization calculation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
 
 ```swift
 extension Encodable {
@@ -111,7 +111,7 @@ try instance.memoz[JSONFormatted: false, sorted: true].get() // unformatted & so
 
 ## Sequential Memoization
 
-Note that the `memoz` only caches the adjacent keyPath. If you would like to memoize multiple sequential key paths, this can be done with multiple chained `memoz` calls, as so:
+Note that the `memoz` only caches the adjacent keyPath. If you would like to memoize multiple sequential key paths, this can be done with multiple chained `memoz` calls, like so:
 
 ```swift
 instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp…
