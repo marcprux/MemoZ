@@ -2,11 +2,15 @@
 
 MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to:
 
-`x.expensiveCalculation`
+```swift
+x.expensiveCalculation
+```
 
-can be memoized simply by interleaving the `memoz`:
+can be memoized simply by interleaving the dynamic `memoz` property:
 
-`x.memoz.expensiveCalculation`
+```swift
+x.memoz.expensiveCalculation
+```
 
 and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
 
