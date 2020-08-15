@@ -1,6 +1,14 @@
 # MemoZ – memoize referentially transparent properties in Swift
 
-MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to `x.expensiveCalculation` can be memoized simply by interleaving the `memoz`: `x.memoz.expensiveCalculation`, and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
+MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to:
+
+`x.expensiveCalculation`
+
+can be memoized simply by interleaving the `memoz`:
+
+`x.memoz.expensiveCalculation`
+
+and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
 
 ## Sample usage
 
@@ -152,8 +160,11 @@ func testCachePartition() {
     measure {
         // the following two calls are the same, except the second one uses a custom cache rather than the default global cache
         XCTAssertEqual(3800038, uuids.memoz.description.count)
-        XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
+        XCTAssertEqual(3800038, uuids[memoz: .domainCache].description.count)
     }
 }
 ```
+
+An advantage of using your own cache is that you can enable & disable it (by setting it to nil) on a global basis from a single location and compare the performance of your app with caching disabled.
+
 
