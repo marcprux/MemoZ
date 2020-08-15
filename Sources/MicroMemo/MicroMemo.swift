@@ -79,26 +79,44 @@ public extension Hashable {
     /// `memoize`s the result of the subsequent path in a global cache.
     /// - Returns: the cached or uncached key path
     /// - Note: Should only be used with value types and functionally-pure key paths
-    @inlinable var memoz: Memoizer<Self> { Memoizer(value: self) }
+    @available(OSX 10.12, iOS 12, *)
+    @inlinable var memoz: Memoizer<Self> {
+        Memoizer(value: self, cache: .shared)
+    }
+
+    /// `memoize`s the result of the subsequent path in the specified cache.
+    /// - Parameter cache: the custom memoization cache to use; use .shared for the global cache, or `nil` to disable caching
+    /// - Returns: the cached or uncached key path
+    /// - Note: Should only be used with value types and functionally-pure key paths
+    @available(OSX 10.12, iOS 12, *)
+    @inlinable subscript(memoz cache: MemoizationCache?) -> Memoizer<Self> {
+        Memoizer(value: self, cache: cache)
+    }
 }
 
 public extension Hashable where Self : AnyObject {
     /// `memoize` should only be used on value types. It is permitted but discouraged.
     @available(*, deprecated, message: "memoize should not be used with reference types")
-    @inlinable var memoz: Memoizer<Self> { Memoizer(value: self) }
+    @available(OSX 10.12, iOS 12, *)
+    @inlinable var memoz: Memoizer<Self> {
+        Memoizer(value: self, cache: .shared)
+    }
 }
 
 /// A pass-through instance that memoizes the result of the given key path.
+@available(OSX 10.12, iOS 12, *)
 @dynamicMemberLookup public struct Memoizer<Value: Hashable> {
-    private(set) var value: Value
+    private let value: Value
+    private let cache: MemoizationCache?
 
-    @usableFromInline init(value: Value) {
+    @usableFromInline init(value: Value, cache: MemoizationCache?) {
         self.value = value
+        self.cache = cache
     }
 
     @available(OSX 10.12, iOS 12, *)
     public subscript<T>(dynamicMember keyPath: KeyPath<Value, T>) -> T {
-        value.memoize(keyPath)
+        value.memoize(with: cache, keyPath)
     }
 }
 
@@ -171,8 +189,6 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
     /// Gets the instance from the cache, or `create`s it if is not present
     public func fetch(key: Key, exclusive: Bool, create: (Key) throws -> (Value)) rethrows -> Value {
         // cache is thread safe, so we don't need to sync; but one possible advantage of syncing is that two threads won't try to generate the value for the same key at the same time, but in an environment where we are pre-populating the cache from multiple threads, it is probably better to accept the multiple work items rather than cause the process to be serialized
-        // This speeds up things like pre-parsing Categorized.json from 4319ms (when locked) to 2486ms (without locking)
-
 
         let keyRef = NSRef(rawValue: key) // NSCache requires that the key be an NSObject subclass
 

@@ -1,6 +1,6 @@
 # Swift μmemo – micro-memoization
 
-MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.memoz.expensiveCalculation`.
+MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So a call to `x.expensiveCalculation` can be memoized  simply by changing the call to `x.memoz.expensiveCalculation` so that subsequent invocations are fast.
 
 ## Sample usage:
 
@@ -8,11 +8,8 @@ MicroMemo provides an extension to `Hashable` with the property `memoz`, which w
 import MicroMemo
 
 extension Sequence where Element : Numeric {
-    /// Add up the numbers
+    /// Adds up all the numbers
     var sum: Element { reduce(0, +) }
-
-    /// Same as above, but also caches the result
-    var summemo: Element { memoz.sum }
 }
 
 class MicroMemoDemo: XCTestCase {
@@ -25,7 +22,7 @@ class MicroMemoDemo: XCTestCase {
 
     func testMemoizedSum() throws {
         // average: 0.130, relative standard deviation: 299.947% <- **10x speed gain**
-        measure {  XCTAssertEqual(millions.summemo, 0) }
+        measure { XCTAssertEqual(millions.memoz.sum, 0) }
     }
 }
 
@@ -48,6 +45,85 @@ If you're running an Xcode project:
   3. use `master` or pin the appropriate version
   4. add `import MicroMemo`
 
+## Error Handling:
+
+MicroMemo uses the keyPath as a key for the memoization cache, and as such, need to be performed with calculated properties (which can be implemented via extensions). Properties accessors cannot throw errors, but error caching can be done using the `Result` type. For example:
+
+```swift
+extension BidirectionalCollection {
+    /// Returns the first and last element of this collection, or else an error if the collection is empty
+    var firstAndLast: Result<(Element, Element), Error> {
+        Result {
+            guard let first = first else {
+                throw CocoaError(.coderValueNotFound)
+            }
+            return (first, last ?? first)
+        }
+    }
+}
+
+/// `Result.get` is used to convert `Result.failure` into a thrown error
+XCTAssertThrowsError(try emptyArray.memoz.firstAndLast.get())
+```
+
+
+## Memoizing Functions:
+
+Earlier versions of this library permitted the memoization of a function (either an anonymous inline closure or a named function) which was useful for those one-off calculation for which creating an extension on the subject type with a calculated property might be overkill. 
+
+The two problems with this approach were:
+
+  1. Unlike a keypath, a function is not `Hashable` and so cannot participate in the cache key; this was worked around by keying on the calling source code file & line, but that was quite fragile.
+  2. It is too easy to inadvertently capture local state in the function that contributed to the result value, but which wouldn't be included in the cache key, this leading the incorrect cache results being returned.
+
+Forcing the calculation to be performed in a named property solves #1, and, while it isn't possible to enforce true purity in swift (e.g., nothing prevents your calculated property from using `random()`), forcing the calculation to be dependant solely on the state of the subject instance means that the subject will always itself be a valid cache key.
+
+## Paramaterizing Memoization:
+
+Although you cann memoize an arbitrary function call, you can parameterize the memoization calculation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
+
+```swift
+extension Encodable {
+    /// A JSON blob with the given formatting parameters.
+    subscript(JSONFormatted pretty: Bool, sorted sorted: Bool? = nil, noslash noslash: Bool = true) -> Result<Data, Error> {
+        Result {
+            let encoder = JSONEncoder()
+            var fmt = JSONEncoder.OutputFormatting()
+            if pretty { fmt.insert(.prettyPrinted) }
+            if sorted ?? pretty { fmt.insert(.sortedKeys) }
+            if noslash { fmt.insert(.withoutEscapingSlashes) }
+            encoder.outputFormatting = fmt
+            return try encoder.encode(self)
+        }
+    }
+}
+```
+
+Since all of the parameter arguments to the keypath are themselves `Hashable`, you can memoize the results with:
+
+```swift
+try instance.memoz[JSONFormatted: true].get() // pretty
+try instance.memoz[JSONFormatted: false, sorted: true].get() // unformatted & sorted
+```
+
+## Gotchas:
+
+Care must be taken that the calculation is truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions typically take the current locale into account, so if the locale changes between invocations, the difference may not be seen when results are returned from the memoization cache.
+
+
+## Implementation Details:
+
+MicroMemo is a coarse-grained caching library that maintains a single global cache keyed by a combination of a target `Hashable` and a key path. As such, it *just works* for most cases, but care must be taken that:
+
+ 1. the target `Hashable` instance is a value type 
+ 2. the predicate keyPath is pure: is must have no side-effects and be referentially transparent
+
+## Thread Safety:
+
+MicroMemo's caching is thread-safe, mostly through `NSCache`'s own thread-safe accessors. It should be noted that while `MicoMemo.Cache` has an option for forcing exclusive cache access (e.g., so mutiple simultaneous initial cache accesses for an instance will line up and wait for a single cache calculation to be performed), `memoz` does *not* enforce exclusivity. 
+
+It should always be assumed that any calculation performed in the target's keyPath might be run simultaneously on multiple threads, either when the cache is initially loaded, or subsequently due to re-evaluation after a cache eviction.
+
 ## Other Features:
 
 MicoMemo also provides a `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference types for keys and values). Memoization caches can be partitioned into separate global caches like so:
@@ -68,34 +144,3 @@ func testCachePartition() {
 }
 ```
 
-## Error Handling:
-
-MicroMemo uses the keyPath as a key for the cache, and as such, need to be performed with calculated properties (typically implemented via extensions). Properties cannot throw errors, but error caching can be done using the `Result` type. For example:
-
-```swift
-extension BidirectionalCollection {
-    /// Returns the first and last element of this collection, or else an error if the collection is empty
-    var firstAndLast: Result<(Element, Element), Error> {
-        Result {
-            guard let first = first else {
-                throw CocoaError(.coderValueNotFound)
-            }
-            return (first, last ?? first)
-        }
-    }
-}
-
-/// `Result.get` is used to convert `Result.failure` into a thrown error
-XCTAssertThrowsError(try emptyArray.memoz.firstAndLast.get())
-```
-
-
-
-
-## Implementation Details:
-
-μmemo is a coarse-grained caching library that maintains a **single global cache** keyed by the key path. As such, it *just works* for most cases, but care must be taken that:
-
- 1. the target item is a `Hashable` value type 
- 2. the predicate keyPath is pure
- 3. the result of the function/property is a value type

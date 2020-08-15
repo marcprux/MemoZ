@@ -1,5 +1,6 @@
 
 import XCTest
+import Dispatch
 import MicroMemo
 
 extension Sequence where Element : Numeric {
@@ -49,18 +50,72 @@ final class SummingTests: XCTestCase {
             // the following two calls are the same, except the second one uses a partitioned cache
             XCTAssertEqual(3800038, uuids.memoz.description.count)
             XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
+            XCTAssertEqual(3800038, uuids[memoz: .domainCache].description.count)
+        }
+    }
+
+    func testJSONFormatted() throws {
+        let data = try ["x": "A", "y": "B", "z": "C"][JSONFormatted: false, sorted: true].get()
+        XCTAssertEqual(String(data: data, encoding: .utf8), "{\"x\":\"A\",\"y\":\"B\",\"z\":\"C\"}")
+
+        let data2 = try ["x": "A", "y": "B", "z": "C"].memoz[JSONFormatted: false, sorted: nil].get()
+
+    }
+
+    func testCacheThreading() {
+        // make a big map with some duplicated UUIDs
+        var uuids = (1...10).map({ _ in [[UUID()]] })
+        for _ in 1...12 {
+            uuids += uuids
+        }
+        uuids.shuffle()
+
+        XCTAssertEqual(40960, uuids.count)
+        print("checking cache for \(uuids.count) random UUIDs")
+
+        func checkUUID(at index: Int) {
+            let pretty = Bool.random()
+            let str1 = uuids[index].memoz[JSONFormatted: pretty]
+            let str2 = uuids[index].memoz[JSONFormatted: !pretty, sorted: true]
+            // make sure the two memoz were keyed on different parameters
+            XCTAssertNotEqual(try str1.get(), try str2.get())
+        }
+
+        measure {
+            DispatchQueue.concurrentPerform(iterations: uuids.count, execute: checkUUID)
         }
     }
 
     func testErrorHandling() {
         XCTAssertThrowsError(try Array<Bool>().memoz.firstAndLast.get())
     }
-
 }
 
 extension MemoizationCache {
     /// A domain-specific cache
     static let domainCache = MemoizationCache()
+}
+
+extension Encodable {
+    /// A JSON blob with the given parameters.
+    ///
+    /// For example:
+    /// ```["x": "A", "y": "B", "z": "C"][JSONFormatted: false, sorted: true]```
+    ///
+    /// will return the result with data:
+    ///
+    /// ```{"x":"A","y":"B","z":"C"}```
+    subscript(JSONFormatted pretty: Bool, sorted sorted: Bool? = nil, noslash noslash: Bool = true) -> Result<Data, Error> {
+        Result {
+            let encoder = JSONEncoder()
+            var fmt = JSONEncoder.OutputFormatting()
+            if pretty { fmt.insert(.prettyPrinted) }
+            if sorted ?? pretty { fmt.insert(.sortedKeys) }
+            if noslash { fmt.insert(.withoutEscapingSlashes) }
+            encoder.outputFormatting = fmt
+            return try encoder.encode(self)
+        }
+    }
 }
 
 extension BidirectionalCollection {
