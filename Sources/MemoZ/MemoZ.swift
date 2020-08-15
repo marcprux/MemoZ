@@ -10,13 +10,12 @@ import Foundation
 
 // MARK: MemoizationCache
 
-/// A type-erased cache of memoization results, keyed on an arbitray `Hashable` and a cache key indicating the _source code location_ of the cache call.
-/// - Note: this ideally would be a static stored property on `T`, but Swift doesn't support static stored properties on generic types.
+/// A type-erased cache of memoization results, keyed on an arbitray `Hashable` and a key path.
 /// - Seealso: https://stackoverflow.com/questions/37963327/what-is-a-good-alternative-for-static-stored-properties-of-generic-types-in-swif
 @available(OSX 10.12, iOS 12, *)
 public typealias MemoizationCache = Cache<MemoizationCacheKey, Any>
 
-/// A key for memoization that uses an arbitrary `Hashable` instance as well as the source code location (file name & line number) to uniquely identify a cache reference point.
+/// A key for memoization that uses a `Hashable` instance with a hashable `KeyPath` to form a cache key.
 public struct MemoizationCacheKey : Hashable {
     /// The subject of the memoization call
     let subject: AnyHashable
@@ -136,7 +135,7 @@ extension Hashable where Self : AnyObject {
 @available(OSX 10.12, iOS 12, *)
 public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral {
     private typealias CacheType = NSCache<NSRef<Key>, Ref<Value?>>
-
+    
     /// We work with an internal cache because “Extension of a generic Objective-C class cannot access the class's generic parameters at runtime”
     // public let cache = NSCache<Ref<Key>, Ref<Value>>()
     private let cache = CacheType()
@@ -149,7 +148,7 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
     private class LoggingDelegate : NSObject, NSCacheDelegate {
         func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
             if let obj = obj as? Ref<Value> {
-                print("evicting", obj.rawValue, "from", Cache<Key, Value>.self)
+                print("evicting", obj.val, "from", Cache<Key, Value>.self)
             } else {
                 print("evicting", obj, "from", Cache<Key, Value>.self)
             }
@@ -164,24 +163,24 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
     public init(dictionaryLiteral elements: (Key, Value)...) {
         //self.cache.delegate = logger // fun for debugging
         for (key, value) in elements {
-            //cache.setObject(Ref(rawValue: value), forKey: Ref(rawValue: key))
-            cache.setObject(Ref(rawValue: .init(value)), forKey: NSRef(rawValue: key))
+            //cache.setObject(Ref(val: value), forKey: Ref(val: key))
+            cache.setObject(Ref(.init(value)), forKey: NSRef(key))
         }
     }
 
     public subscript(key: Key) -> Value? {
         get {
-            // return cache.object(forKey: Ref(rawValue: key))?.rawValue
-            return cache.object(forKey: NSRef(rawValue: key))?.rawValue
+            // return cache.object(forKey: Ref(key))?.val
+            return cache.object(forKey: NSRef(key))?.val
         }
 
         set {
             if let newValue = newValue {
-                // cache.setObject(Ref(rawValue: newValue), forKey: Ref(rawValue: key))
-                cache.setObject(Ref(rawValue: .init(newValue)), forKey: NSRef(rawValue: key))
+                // cache.setObject(Ref(newValue), forKey: Ref(key))
+                cache.setObject(Ref(.init(newValue)), forKey: NSRef(key))
             } else {
-                // cache.removeObject(forKey: Ref(rawValue: key))
-                cache.removeObject(forKey: NSRef(rawValue: key))
+                // cache.removeObject(forKey: Ref(key))
+                cache.removeObject(forKey: NSRef(key))
             }
         }
     }
@@ -190,10 +189,10 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
     public func fetch(key: Key, exclusive: Bool, create: (Key) throws -> (Value)) rethrows -> Value {
         // cache is thread safe, so we don't need to sync; but one possible advantage of syncing is that two threads won't try to generate the value for the same key at the same time, but in an environment where we are pre-populating the cache from multiple threads, it is probably better to accept the multiple work items rather than cause the process to be serialized
 
-        let keyRef = NSRef(rawValue: key) // NSCache requires that the key be an NSObject subclass
+        let keyRef = NSRef(key) // NSCache requires that the key be an NSObject subclass
 
         // quick lockless check for the object; we will check again inside any exclusive block
-        if let object = cache.object(forKey: keyRef)?.rawValue {
+        if let object = cache.object(forKey: keyRef)?.val {
             return object
         }
 
@@ -206,13 +205,13 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
                 if exclusive { objc_sync_enter(lockValue) } // line up behind the create() block
                 defer { if exclusive { objc_sync_exit(lockValue) } }
 
-                if let value = lockValue.rawValue {
+                if let value = lockValue.val {
                     return value
                 } else {
                     lockOrValue = lockValue // empty value means use the ref as a lock
                 }
             } else {
-                lockOrValue = .init(rawValue: .none) // no value: create a new empty Ref (i.e., the lock)
+                lockOrValue = .init(.none) // no value: create a new empty Ref (i.e., the lock)
                 cache.setObject(lockOrValue, forKey: keyRef)
             }
         }
@@ -223,12 +222,12 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
             defer { if exclusive { objc_sync_exit(lockOrValue) } }
 
             let value = try create(key)
-            //assert(!exclusive || lockOrValue.rawValue == nil)
+            //assert(!exclusive || lockOrValue.val == nil)
             if exclusive {
-                lockOrValue.rawValue = value // fill in the locked value's value
+                lockOrValue.val = value // fill in the locked value's value
             }
             // when exclusive, we update the existing key; otherwise we overwrite with a new (unsynchronized) value
-            let cacheValue = exclusive ? lockOrValue : .init(rawValue: value)
+            let cacheValue = exclusive ? lockOrValue : .init(value)
 
             cache.setObject(cacheValue, forKey: keyRef)
             return value
@@ -271,55 +270,29 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
 
 /// A reference wrapper around another type; this will typically be used to provide reference semantics for value types
 /// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-final class Ref<T> : RawRepresentable {
-    public var rawValue: T
-    @inlinable public init(rawValue v: T) { rawValue = v }
+final class Ref<T> {
+    var val: T
+    @inlinable init(_ val: T) { self.val = val }
 }
-
-/// A box type that permits copy-on-write semantics for value types
-/// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-struct Box<T> {
-    @usableFromInline var ref : Ref<T>
-    @inlinable public init(_ x : T) { ref = Ref(rawValue: x) }
-
-    @inlinable public var value: T {
-        get { return ref.rawValue }
-        set {
-            if (!isKnownUniquelyReferenced(&ref)) {
-                ref = Ref(rawValue: newValue)
-                return
-            }
-            ref.rawValue = newValue
-        }
-    }
-}
-
-extension Ref : Equatable where T : Equatable { }
-
-extension Box : Equatable where T : Equatable { }
-
-extension Ref : Hashable where T : Hashable { }
-
-extension Box : Hashable where T : Hashable { }
 
 /// A reference that can be used as a cache key for `NSCache` that wraps a value type.
 /// Simply using a `Ref` doesn't work (for unknown reasons).
-@usableFromInline final class NSRef<RawValue: Hashable>: NSObject, RawRepresentable {
-    @usableFromInline let rawValue: RawValue
+@usableFromInline final class NSRef<T: Hashable>: NSObject {
+    @usableFromInline let val: T
 
-    @usableFromInline init(rawValue: RawValue) {
-        self.rawValue = rawValue
+    @usableFromInline init(_ val: T) {
+        self.val = val
     }
 
     @inlinable override func isEqual(_ object: Any?) -> Bool {
-        return (object as? NSRef<RawValue>)?.rawValue == self.rawValue
+        return (object as? NSRef<T>)?.val == self.val
     }
 
     @inlinable static func ==(lhs: NSRef, rhs: NSRef) -> Bool {
-        return lhs.rawValue == rhs.rawValue
+        return lhs.val == rhs.val
     }
 
     @inlinable override var hash: Int {
-        return self.rawValue.hashValue
+        return self.val.hashValue
     }
 }
