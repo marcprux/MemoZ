@@ -1,5 +1,5 @@
 //
-//  MicroMemo
+//  MemoZ
 //  Memoize All The Things!
 //
 //  Marc Prud'hommeaux, 2020

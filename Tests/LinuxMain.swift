@@ -1,7 +1,7 @@
 import XCTest
 
-import MicroMemoTests
+import MemoZTests
 
 var tests = [XCTestCaseEntry]()
-tests += MicroMemoTests.allTests()
+tests += MemoZTests.allTests()
 XCTMain(tests)

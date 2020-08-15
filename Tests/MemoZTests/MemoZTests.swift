@@ -1,7 +1,7 @@
 
 import XCTest
 import Dispatch
-import MicroMemo
+import MemoZ
 
 extension Sequence where Element : Numeric {
     var sum: Element { reduce(0, +) }

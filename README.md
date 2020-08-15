@@ -1,18 +1,18 @@
-# Swift μmemo – micro-memoization
+# MemoZ – memoize referentially transparent properties in Swift
 
-MicroMemo provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to `x.expensiveCalculation` can be memoized simply by interleaving the `memoz`: `x.memoz.expensiveCalculation`, and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
+MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result. So an expensive call to `x.expensiveCalculation` can be memoized simply by interleaving the `memoz`: `x.memoz.expensiveCalculation`, and the `expensiveCalculation` will be cached the first time it is called, and subsequent calls will return the cached value (until the cache is purged).
 
 ## Sample usage
 
 ```swift
-import MicroMemo
+import MemoZ
 
 extension Sequence where Element : Numeric {
     /// Adds up all the numbers
     var sum: Element { reduce(0, +) }
 }
 
-class MicroMemoDemo: XCTestCase {
+class MemoZDemo: XCTestCase {
     let millions = (-1_000_000...1_000_000)
     
     func testCalculatedSum() throws {
@@ -42,14 +42,14 @@ Wikipedia describes the technique of [memoization](https://en.wikipedia.org/wiki
 If you're running an Xcode project:
 
   1. select `File` -> `Swift packages` -> `Add Package Dependency...`,
-  2. add this repo's git file `git@github.com:marcprux/MicroMemo.git` 
+  2. add this repo's git file `git@github.com:marcprux/MemoZ.git` 
   3. use `master` or pin the appropriate version
-  4. add `import MicroMemo`
+  4. add `import MemoZ`
 
 
 ## Error Handling
 
-MicroMemo uses the keyPath as a key for the memoization cache, and as such, need to be performed with calculated properties (which can be implemented via extensions). Property accessors cannot throw errors, but error handling can be accomplished using the `Result` type. For example:
+MemoZ uses the keyPath as a key for the memoization cache, and as such, need to be performed with calculated properties (which can be implemented via extensions). Property accessors cannot throw errors, but error handling can be accomplished using the `Result` type. For example:
 
 ```swift
 extension BidirectionalCollection {
@@ -124,7 +124,7 @@ Care must be taken that the calculation is truly referentially transparent. It m
 
 ## Implementation Details
 
-MicroMemo is a coarse-grained caching library that maintains a single global cache keyed by a combination of a target `Hashable` and a key path. As such, it *just works* for most cases, but care must be taken that:
+MemoZ is a coarse-grained caching library that maintains a single global cache keyed by a combination of a target `Hashable` and a key path. As such, it *just works* for most cases, but care must be taken that:
 
  1. the target `Hashable` instance is a value type 
  2. the predicate keyPath is pure: is must have no side-effects and be referentially transparent
@@ -132,7 +132,7 @@ MicroMemo is a coarse-grained caching library that maintains a single global cac
 
 ## Thread Safety
 
-MicroMemo's caching is thread-safe, mostly through `NSCache`'s own thread-safe accessors. It should be noted that while `MicoMemo.Cache` has an option for forcing exclusive cache access (e.g., so mutiple simultaneous initial cache accesses for an instance will line up and wait for a single cache calculation to be performed), `memoz` does *not* enforce exclusivity. 
+MemoZ's caching is thread-safe, mostly through `NSCache`'s own thread-safe accessors. It should be noted that while `MicoMemo.Cache` has an option for forcing exclusive cache access (e.g., so mutiple simultaneous initial cache accesses for an instance will line up and wait for a single cache calculation to be performed), `memoz` does *not* enforce exclusivity. 
 
 It should always be assumed that any calculation performed in the target's keyPath might be run simultaneously on multiple threads, either when the cache is initially loaded, or subsequently due to re-evaluation after a cache eviction.
 
