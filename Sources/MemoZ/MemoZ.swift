@@ -64,7 +64,7 @@ extension Hashable {
         // dbg(cacheKey)
 
         // note exclusive=false to reduce locking overhead; this does mean that multiple threads might simultaneously memoize the same result, but the benefits of faster cache reads later outweighs the unlikly change of multiple simultaneous cache hits
-        let cacheValue = cache.fetch(key: cacheKey, exclusive: false) { _ in
+        let cacheValue = cache.fetch(key: cacheKey) { _ in
             self[keyPath: keyPath]
         }
 
