@@ -60,7 +60,7 @@ extension Hashable {
             return self[keyPath: keyPath]
         }
 
-        let cacheKey = MemoizationCache.Key(subject: self, keyPath: keyPath)
+        let cacheKey = MemoizationCacheKey(subject: self, keyPath: keyPath)
         // dbg(cacheKey)
 
         // note exclusive=false to reduce locking overhead; this does mean that multiple threads might simultaneously memoize the same result, but the benefits of faster cache reads later outweighs the unlikly change of multiple simultaneous cache hits
@@ -128,20 +128,16 @@ extension Hashable where Self : AnyObject {
     }
 }
 
-
 // MARK: Cache
 
 /// Wrapper around `NSCache` that allows keys/values to be value types and has an atomic `fetch` option.
 @available(OSX 10.12, iOS 12, *)
-public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral {
+public final class Cache<Key : Hashable, Value> {
     private typealias CacheType = NSCache<NSRef<Key>, Ref<Value?>>
-    
+
     /// We work with an internal cache because “Extension of a generic Objective-C class cannot access the class's generic parameters at runtime”
     // public let cache = NSCache<Ref<Key>, Ref<Value>>()
     private let cache = CacheType()
-
-    /// The lock we use for cache-level locking
-    private var cacheLock = os_unfair_lock_s()
 
     //private let logger = LoggingDelegate()
 
@@ -155,16 +151,11 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
         }
     }
 
-    public init(name: String = "\(#file):\(#line)") {
+    public init(name: String = "\(#file):\(#line)", countLimit: Int? = 0) {
         self.cache.name = name
         //self.cache.delegate = logger // fun for debugging
-    }
-
-    public init(dictionaryLiteral elements: (Key, Value)...) {
-        //self.cache.delegate = logger // fun for debugging
-        for (key, value) in elements {
-            //cache.setObject(Ref(val: value), forKey: Ref(val: key))
-            cache.setObject(Ref(.init(value)), forKey: NSRef(key))
+        if let countLimit = countLimit {
+            self.cache.countLimit = countLimit
         }
     }
 
@@ -186,50 +177,13 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
     }
 
     /// Gets the instance from the cache, or `create`s it if is not present
-    public func fetch(key: Key, exclusive: Bool, create: (Key) throws -> (Value)) rethrows -> Value {
-        // cache is thread safe, so we don't need to sync; but one possible advantage of syncing is that two threads won't try to generate the value for the same key at the same time, but in an environment where we are pre-populating the cache from multiple threads, it is probably better to accept the multiple work items rather than cause the process to be serialized
-
-        let keyRef = NSRef(key) // NSCache requires that the key be an NSObject subclass
-
-        // quick lockless check for the object; we will check again inside any exclusive block
-        if let object = cache.object(forKey: keyRef)?.val {
-            return object
-        }
-
-        var lockOrValue: Ref<Value?>
-        do {
-            os_unfair_lock_lock(&cacheLock)
-            defer { os_unfair_lock_unlock(&cacheLock) }
-
-            if let lockValue = cache.object(forKey: keyRef) {
-                if exclusive { objc_sync_enter(lockValue) } // line up behind the create() block
-                defer { if exclusive { objc_sync_exit(lockValue) } }
-
-                if let value = lockValue.val {
-                    return value
-                } else {
-                    lockOrValue = lockValue // empty value means use the ref as a lock
-                }
-            } else {
-                lockOrValue = .init(.none) // no value: create a new empty Ref (i.e., the lock)
-                cache.setObject(lockOrValue, forKey: keyRef)
-            }
-        }
-
-        do {
-            // lock the object for creation
-            if exclusive { objc_sync_enter(lockOrValue) }
-            defer { if exclusive { objc_sync_exit(lockOrValue) } }
-
+    public func fetch(key: Key, create: (Key) throws -> (Value)) rethrows -> Value {
+        let keyRef = NSRef(key)
+        if let value = cache.object(forKey: keyRef)?.val {
+            return value
+        } else {
             let value = try create(key)
-            //assert(!exclusive || lockOrValue.val == nil)
-            if exclusive {
-                lockOrValue.val = value // fill in the locked value's value
-            }
-            // when exclusive, we update the existing key; otherwise we overwrite with a new (unsynchronized) value
-            let cacheValue = exclusive ? lockOrValue : .init(value)
-
-            cache.setObject(cacheValue, forKey: keyRef)
+            cache.setObject(Ref(value), forKey: keyRef)
             return value
         }
     }
@@ -256,17 +210,6 @@ public final class Cache<Key : Hashable, Value> : ExpressibleByDictionaryLiteral
         set { cache.countLimit = newValue }
     }
 }
-
-// MARK: Utilities
-
-/// Expects that the given parameter is non-nil, and logs an error when it is nil. This can be used as a breakpoint for identifying unexpected nils without failing an assertion.
-@usableFromInline func expecting<T>(_ value: T?, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) -> T? {
-//    if value == nil {
-//        dbg("unexpected empty value for", T.self, functionName: functionName, fileName: fileName, lineNumber: lineNumber)
-//    }
-    return value
-}
-
 
 /// A reference wrapper around another type; this will typically be used to provide reference semantics for value types
 /// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
@@ -296,3 +239,15 @@ final class Ref<T> {
         return self.val.hashValue
     }
 }
+
+// MARK: Utilities
+
+/// Expects that the given parameter is non-nil, and logs an error when it is nil. This can be used as a breakpoint for identifying unexpected nils without failing an assertion.
+@usableFromInline func expecting<T>(_ value: T?, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) -> T? {
+//    if value == nil {
+//        dbg("unexpected empty value for", T.self, functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+//    }
+    return value
+}
+
+

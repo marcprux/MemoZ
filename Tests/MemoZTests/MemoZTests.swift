@@ -19,7 +19,7 @@ extension BinaryInteger where Self.Stride : SignedInteger {
     }
 }
 
-final class SummingTests: XCTestCase {
+final class MemoZTests: XCTestCase {
     func testSum() {
         XCTAssertEqual(15, (1...5).sum)
         XCTAssertEqual(15, (1...5).memoz.sum)
@@ -54,14 +54,20 @@ final class SummingTests: XCTestCase {
         }
     }
 
-    func testJSONFormatted() throws {
-        let data = try ["x": "A", "y": "B", "z": "C"][JSONFormatted: false, sorted: true].get()
-        XCTAssertEqual(String(data: data, encoding: .utf8), "{\"x\":\"A\",\"y\":\"B\",\"z\":\"C\"}")
+    #if !os(Linux)
+    func testJSONFormatted() {
+        do {
+            let data = try ["x": "A", "y": "B", "z": "C"][JSONFormatted: false, sorted: true].get()
+            XCTAssertEqual(String(data: data, encoding: .utf8), "{\"x\":\"A\",\"y\":\"B\",\"z\":\"C\"}")
 
-        let data2 = try ["x": "A", "y": "B", "z": "C"].memoz[JSONFormatted: false, sorted: nil].get()
-
+            let _ = try ["x": "A", "y": "B", "z": "C"].memoz[JSONFormatted: false, sorted: nil].get()
+        } catch {
+            XCTFail("\(error)")
+        }
     }
+    #endif
 
+    #if !os(Linux)
     func testCacheThreading() {
         // make a big map with some duplicated UUIDs
         var uuids = (1...10).map({ _ in [[UUID()]] })
@@ -85,6 +91,7 @@ final class SummingTests: XCTestCase {
             DispatchQueue.concurrentPerform(iterations: uuids.count, execute: checkUUID)
         }
     }
+    #endif
 
     func testErrorHandling() {
         XCTAssertThrowsError(try Array<Bool>().memoz.firstAndLast.get())
@@ -96,6 +103,7 @@ extension MemoizationCache {
     static let domainCache = MemoizationCache()
 }
 
+#if !os(Linux)
 extension Encodable {
     /// A JSON blob with the given parameters.
     ///
@@ -117,6 +125,7 @@ extension Encodable {
         }
     }
 }
+#endif
 
 extension BidirectionalCollection {
     /// Returns the first and last element of this collection, or else an error if the collection is empty
