@@ -24,6 +24,7 @@ extension Hashable {
     ///
     /// - Throws: re-throws and errors from `predicate`
     /// - Returns: the result from the `predicate`, either a previously cached value, or the result of executing the `predicate`
+    /// - Complexity: around O(1) for a successful cache hit, otherwise the complexity of the keyPath execution
     @available(OSX 10.12, iOS 12, *)
     @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, T>) -> T {
         cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
