@@ -19,7 +19,34 @@ extension BinaryInteger where Self.Stride : SignedInteger {
     }
 }
 
+extension String {
+    /// Returns this string with a random UUID at the end
+    var withRandomUUIDSuffix: String { self + UUID().uuidString }
+}
+
 final class MemoZTests: XCTestCase {
+    /// This is an example of mis-use of the cache by caching a non-referrentially-transparent keypath function
+    func testMisuse() {
+        XCTAssertNotEqual("".withRandomUUIDSuffix, "".withRandomUUIDSuffix)
+        XCTAssertEqual("".memoz.withRandomUUIDSuffix, "".memoz.withRandomUUIDSuffix) // two random IDs are the same!
+
+        XCTAssertNotEqual("".memoz.withRandomUUIDSuffix, "xyz".memoz.withRandomUUIDSuffix)
+        XCTAssertEqual("xyz".memoz.withRandomUUIDSuffix, "xyz".memoz.withRandomUUIDSuffix)
+    }
+
+    func testCacheCountLimit() {
+        // mis-use the cache to show that the count limit will purge older references
+        let cache = MemoizationCache(countLimit: 10)
+        let randid = ""[memoz: cache].withRandomUUIDSuffix
+        XCTAssertEqual(randid, ""[memoz: cache].withRandomUUIDSuffix)
+
+        for i in 1...1000 {
+            let _ = "\(i)"[memoz: cache].withRandomUUIDSuffix
+        }
+
+        XCTAssertNotEqual(randid, ""[memoz: cache].withRandomUUIDSuffix, "cache should have been purged")
+    }
+
     func testSum() {
         XCTAssertEqual(15, (1...5).sum)
         XCTAssertEqual(15, (1...5).memoz.sum)
@@ -35,7 +62,20 @@ final class MemoZTests: XCTestCase {
         XCTAssertEqual(false, 1002.isPrime)
 
         XCTAssertEqual(false, 1002.memoz.isPrime)
+    }
 
+    let millions = (-1_000_000)...(+1_000_000)
+
+    func testSumCached() {
+        measure { // average: 0.129, relative standard deviation: 299.957%
+            XCTAssertEqual(0, millions.memoz.sum)
+        }
+    }
+
+    func testSumUncached() {
+        measure { // average: 1.288, relative standard deviation: 1.363%
+            XCTAssertEqual(0, millions.sum)
+        }
     }
 
     func testValueTypes() {

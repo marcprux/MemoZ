@@ -8,34 +8,6 @@
 
 import Foundation
 
-// MARK: MemoizationCache
-
-/// A type-erased cache of memoization results, keyed on an arbitray `Hashable` and a key path.
-/// - Seealso: https://stackoverflow.com/questions/37963327/what-is-a-good-alternative-for-static-stored-properties-of-generic-types-in-swif
-@available(OSX 10.12, iOS 12, *)
-public typealias MemoizationCache = Cache<MemoizationCacheKey, Any>
-
-/// A key for memoization that uses a `Hashable` instance with a hashable `KeyPath` to form a cache key.
-public struct MemoizationCacheKey : Hashable {
-    /// The subject of the memoization call
-    let subject: AnyHashable
-    /// The key path for the call
-    let keyPath: AnyKeyPath
-
-    /// Internal-only key init – keys should be created only via `Hashable.memoize`
-    @usableFromInline internal init(subject: AnyHashable, keyPath: AnyKeyPath) {
-        self.subject = subject
-        self.keyPath = keyPath
-    }
-}
-
-@available(OSX 10.12, iOS 12, *)
-public extension MemoizationCache {
-    /// A single global cache of memoization results. The cache is thread-safe and backed by an `NSCache` for automatic memory management.
-    /// - Seealso: `Hashable.memoize`
-    static let shared = MemoizationCache()
-}
-
 extension Hashable {
     /// Memoize the result of the execution of a predicate for the `Hashable` receiver.
     ///
@@ -54,25 +26,18 @@ extension Hashable {
     /// - Returns: the result from the `predicate`, either a previously cached value, or the result of executing the `predicate`
     @available(OSX 10.12, iOS 12, *)
     @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, T>) -> T {
-
-        // specifying a nil cache is a mechanism for bypassing caching altogether
-        guard let cache = cache else {
-            return self[keyPath: keyPath]
-        }
-
-        let cacheKey = MemoizationCacheKey(subject: self, keyPath: keyPath)
-        // dbg(cacheKey)
-
-        // note exclusive=false to reduce locking overhead; this does mean that multiple threads might simultaneously memoize the same result, but the benefits of faster cache reads later outweighs the unlikly change of multiple simultaneous cache hits
-        let cacheValue = cache.fetch(key: cacheKey) { _ in
+        cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
             self[keyPath: keyPath]
-        }
+        } as? T ?? mismatched(self[keyPath: keyPath], active: cache != nil, keyPath: keyPath)
+    }
 
-        // we use `expecting` so we drop into a breakpoint when the value is unexpected (which shouldn't generally happen, but could be a result of mis-using the `memoize` (e.g., within a generic function)).
-        return expecting(cacheValue as? T) ?? self[keyPath: keyPath] // fallback to direct execution in case something goes wrong with the cache
+    @usableFromInline func mismatched<T>(_ val: T, active: Bool, keyPath: KeyPath<Self, T>) -> T {
+        if !active {
+            print("MemoZ Warning: cache return value did not match expected type", T.self, "… this indicates a bug in MemoZ or NSCache")
+        }
+        return val
     }
 }
-
 
 public extension Hashable {
     /// `memoize`s the result of the subsequent path in a global cache.
@@ -105,8 +70,8 @@ public extension Hashable where Self : AnyObject {
 /// A pass-through instance that memoizes the result of the given key path.
 @available(OSX 10.12, iOS 12, *)
 @dynamicMemberLookup public struct Memoizer<Value: Hashable> {
-    private let value: Value
-    private let cache: MemoizationCache?
+    @usableFromInline let value: Value
+    @usableFromInline let cache: MemoizationCache?
 
     @usableFromInline init(value: Value, cache: MemoizationCache?) {
         self.value = value
@@ -114,7 +79,7 @@ public extension Hashable where Self : AnyObject {
     }
 
     @available(OSX 10.12, iOS 12, *)
-    public subscript<T>(dynamicMember keyPath: KeyPath<Value, T>) -> T {
+    @inlinable public subscript<T>(dynamicMember keyPath: KeyPath<Value, T>) -> T {
         value.memoize(with: cache, keyPath)
     }
 }
@@ -128,18 +93,54 @@ extension Hashable where Self : AnyObject {
     }
 }
 
+// MARK: MemoizationCache
+
+/// A type-erased cache of memoization results, keyed on an arbitray `Hashable` and a key path.
+/// - Seealso: https://stackoverflow.com/questions/37963327/what-is-a-good-alternative-for-static-stored-properties-of-generic-types-in-swif
+@available(OSX 10.12, iOS 12, *)
+public typealias MemoizationCache = Cache<MemoizationCacheKey, Any>
+
+/// A key for memoization that uses a `Hashable` instance with a hashable `KeyPath` to form a cache key.
+public struct MemoizationCacheKey : Hashable {
+    /// The subject of the memoization call
+    let subject: AnyHashable
+    /// The key path for the call
+    let keyPath: AnyKeyPath
+
+    /// Internal-only key init – keys should be created only via `Hashable.memoize`
+    @usableFromInline internal init(subject: AnyHashable, keyPath: AnyKeyPath) {
+        self.subject = subject
+        self.keyPath = keyPath
+    }
+}
+
+@available(OSX 10.12, iOS 12, *)
+public extension MemoizationCache {
+    /// A single global cache of memoization results. The cache is thread-safe and backed by an `NSCache` for automatic memory management.
+    /// - Seealso: `Hashable.memoize`
+    static let shared = MemoizationCache()
+}
+
+
 // MARK: Cache
 
 /// Wrapper around `NSCache` that allows keys/values to be value types and has an atomic `fetch` option.
 @available(OSX 10.12, iOS 12, *)
 public final class Cache<Key : Hashable, Value> {
-    private typealias CacheType = NSCache<NSRef<Key>, Ref<Value?>>
+    private typealias CacheType = NSCache<KeyRef<Key>, Ref<Value?>>
 
     /// We work with an internal cache because “Extension of a generic Objective-C class cannot access the class's generic parameters at runtime”
-    // public let cache = NSCache<Ref<Key>, Ref<Value>>()
     private let cache = CacheType()
 
-    //private let logger = LoggingDelegate()
+    // private let logger = LoggingDelegate()
+
+    public init(name: String = "\(#file):\(#line)", countLimit: Int? = 0) {
+        self.cache.name = name
+        // self.cache.delegate = logger
+        if let countLimit = countLimit {
+            self.cache.countLimit = countLimit
+        }
+    }
 
     private class LoggingDelegate : NSObject, NSCacheDelegate {
         func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
@@ -151,34 +152,23 @@ public final class Cache<Key : Hashable, Value> {
         }
     }
 
-    public init(name: String = "\(#file):\(#line)", countLimit: Int? = 0) {
-        self.cache.name = name
-        //self.cache.delegate = logger // fun for debugging
-        if let countLimit = countLimit {
-            self.cache.countLimit = countLimit
-        }
-    }
-
     public subscript(key: Key) -> Value? {
         get {
-            // return cache.object(forKey: Ref(key))?.val
-            return cache.object(forKey: NSRef(key))?.val
+            cache.object(forKey: KeyRef(key))?.val
         }
 
         set {
             if let newValue = newValue {
-                // cache.setObject(Ref(newValue), forKey: Ref(key))
-                cache.setObject(Ref(.init(newValue)), forKey: NSRef(key))
+                cache.setObject(Ref(.init(newValue)), forKey: KeyRef(key))
             } else {
-                // cache.removeObject(forKey: Ref(key))
-                cache.removeObject(forKey: NSRef(key))
+                cache.removeObject(forKey: KeyRef(key))
             }
         }
     }
 
     /// Gets the instance from the cache, or `create`s it if is not present
     public func fetch(key: Key, create: (Key) throws -> (Value)) rethrows -> Value {
-        let keyRef = NSRef(key)
+        let keyRef = KeyRef(key)
         if let value = cache.object(forKey: keyRef)?.val {
             return value
         } else {
@@ -219,8 +209,8 @@ final class Ref<T> {
 }
 
 /// A reference that can be used as a cache key for `NSCache` that wraps a value type.
-/// Simply using a `Ref` doesn't work (for unknown reasons).
-@usableFromInline final class NSRef<T: Hashable>: NSObject {
+/// Simply using a `Ref` as the cache key doesn't work (for unknown reasons).
+@usableFromInline final class KeyRef<T: Hashable>: NSObject {
     @usableFromInline let val: T
 
     @usableFromInline init(_ val: T) {
@@ -228,10 +218,10 @@ final class Ref<T> {
     }
 
     @inlinable override func isEqual(_ object: Any?) -> Bool {
-        return (object as? NSRef<T>)?.val == self.val
+        return (object as? KeyRef<T>)?.val == self.val
     }
 
-    @inlinable static func ==(lhs: NSRef, rhs: NSRef) -> Bool {
+    @inlinable static func ==(lhs: KeyRef, rhs: KeyRef) -> Bool {
         return lhs.val == rhs.val
     }
 
@@ -239,15 +229,3 @@ final class Ref<T> {
         return self.val.hashValue
     }
 }
-
-// MARK: Utilities
-
-/// Expects that the given parameter is non-nil, and logs an error when it is nil. This can be used as a breakpoint for identifying unexpected nils without failing an assertion.
-@usableFromInline func expecting<T>(_ value: T?, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) -> T? {
-//    if value == nil {
-//        dbg("unexpected empty value for", T.self, functionName: functionName, fileName: fileName, lineNumber: lineNumber)
-//    }
-    return value
-}
-
-

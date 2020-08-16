@@ -53,10 +53,10 @@ Wikipedia describes the technique of [memoization](https://en.wikipedia.org/wiki
 ## Setup
 If you're running an Xcode project:
 
-  1. select `File` -> `Swift packages` -> `Add Package Dependency...`,
-  2. add this repo's git file `git@github.com:marcprux/MemoZ.git` 
-  3. use `master` or pin the appropriate version
-  4. add `import MemoZ`
+  1. Select `File` -> `Swift packages` -> `Add Package Dependency...`,
+  2. Add this repo's git file `https://github.com/marcprux/MemoZ`
+  3. Use `master` or pin the appropriate version
+  4. Add `import MemoZ` to any source file that will use `memoz`
 
 
 ## Error Handling
@@ -129,6 +129,38 @@ Note that the `memoz` only caches the adjacent keyPath. If you would like to mem
 instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp…
 ```
 
+## Thread Safety
+
+MemoZ is safe to use from multiple threads but its caching accessors do not lock on access, which means that multiple threads simultaneously trying to memoize the same key path may wind up invoking the same calculation twice. It should always be assumed that any calculation performed in the target's keyPath might be run simultaneously on multiple threads, either when the cache is initially loaded, or subsequently due to re-evaluation after a cache eviction.
+
+
+## Cache Customization
+
+Memoization caches can be partitioned into separate global caches, each with its own size limit:
+
+```swift
+extension MemoizationCache {
+    /// A domain-specific cache that caps the number of cached instances at around 1,000
+    static let domainCache = MemoizationCache(countLimit: 1_000)
+}
+
+func testCachePartition() {
+    let uuids = (0...100_000).map({ _ in UUID() }) // a bunch of random strings
+    measure {
+        // the following two calls are the same, except the second one uses a custom cache rather than the default global cache
+        XCTAssertEqual(3800038, uuids.memoz.description.count)
+        XCTAssertEqual(3800038, uuids[memoz: .domainCache].description.count)
+    }
+}
+```
+
+The `countLimit` is an approximate maximum that the cache should hold. As per `NSCache`'s documentation:
+
+> This is not a strict limit—if the cache goes over the limit, an object in the cache could be evicted instantly, later, or possibly never, depending on the implementation details of the cache.
+
+An additional advantage of using your own cache is that you can enable & disable it (by setting it to nil) on a global basis from a single location and compare the performance of your app with caching disabled.
+
+
 ## Gotchas
 
 Care must be taken that the calculation is truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions typically take the current locale into account, so if the locale changes between invocations, the difference may not be seen when results are returned from the memoization cache.
@@ -142,33 +174,21 @@ MemoZ is a coarse-grained caching library that maintains a single global cache k
  2. the predicate keyPath is pure: is must have no side-effects and be referentially transparent
 
 
-## Thread Safety
-
-MemoZ's caching is thread-safe, mostly through `NSCache`'s own thread-safe accessors. It should be noted that while `MicoMemo.Cache` has an option for forcing exclusive cache access (e.g., so mutiple simultaneous initial cache accesses for an instance will line up and wait for a single cache calculation to be performed), `memoz` does *not* enforce exclusivity. 
-
-It should always be assumed that any calculation performed in the target's keyPath might be run simultaneously on multiple threads, either when the cache is initially loaded, or subsequently due to re-evaluation after a cache eviction.
-
-
 ## Other Features
 
-MicoMemo also provides a `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference types for keys and values). Memoization caches can be partitioned into separate global caches like so:
+MicoMemo also exposes its own `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference types for keys and values). 
 
-```swift
-extension MemoizationCache {
-    /// A domain-specific cache
-    static let domainCache = MemoizationCache()
-}
+## Testing
 
-func testCachePartition() {
-    let uuids = (0...100_000).map({ _ in UUID() }) // a bunch of random strings
-    measure {
-        // the following two calls are the same, except the second one uses a custom cache rather than the default global cache
-        XCTAssertEqual(3800038, uuids.memoz.description.count)
-        XCTAssertEqual(3800038, uuids[memoz: .domainCache].description.count)
-    }
-}
+Tests on the host computer can be run with:
+
+```console
+swift test --enable-test-discovery
 ```
 
-An advantage of using your own cache is that you can enable & disable it (by setting it to nil) on a global basis from a single location and compare the performance of your app with caching disabled.
+Container testing can be done with Docker. For examplem for Linux:
 
+```console
+docker run --rm --interactive --tty --volume "$(pwd):/src" --workdir "/src" swift:latest swift test --enable-test-discovery
+```
 
