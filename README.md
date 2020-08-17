@@ -3,13 +3,13 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
 
-MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-line) caching of computed properties:
+MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-line) caching of computed properties.
 
 ```swift
 import MemoZ
 let value = SomeHashableValue()
 let slow = value.expensiveComputation        // O(N)
-let fast = value.memoz.expensiveComputation  // O(1)
+let fast = value.memoz.expensiveComputation  // O(N) then O(1)
 ```
 
 ## How does it work?
