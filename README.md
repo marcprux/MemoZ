@@ -216,10 +216,10 @@ extension MemoZTests {
 You may want to memoize a function inline without having to make a calculating keyPath in a separate extension. This can be accomplished by wrapping the arguments to the function in a `Hashable` struct, and using an instance as the subject of  `memoz`:
 
 ```swift
-/// Sum all the numbers from from to to
+/// Sum all the numbers from `from` to `to`
 /// - Complexity: initial: O(to-from) memoized: O(1)
 func summit(from: Int, to: Int) -> Int {
-    /// Sum all the numbers from from to to
+    /// Sum all the numbers from `from` to `to`
     /// - Complexity: O(to-from)
     func sumSequence(from: Int, to: Int) -> Int {
         (from...to).reduce(0, +)
