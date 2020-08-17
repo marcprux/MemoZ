@@ -343,7 +343,7 @@ Any caching solution, memoization included, introduces some performance overhead
 
 For example, the following (pointless) memoization of a constant value would result in a 2x performance degradation:
 
-```
+```swift
 struct Pointless : Hashable {
     var alwaysOne: Int { 1 } // 1, always
     var alwaysOneZ: Int { memoz.alwaysOne } // we'd be better off without memoization!
