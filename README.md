@@ -3,11 +3,11 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
 
-MemoZ provides a transparent caching API for computed properties on `Hashable`s:
+MemoZ provides a transparent caching API for computed properties on a `Hashable`:
 
 ```swift
 import MemoZ
-let value = MyValueType()
+let value = SomeHashableValue()
 let slow = value.expensiveComputation        // O(N)
 let fast = value.memoz.expensiveComputation  // O(1)
 ```
