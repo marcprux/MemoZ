@@ -84,6 +84,33 @@ final class MemoZTests: XCTestCase {
         XCTAssertEqual("Xyz", (str as NSString).memoz.capitalized) // we should get a deprecation warning here
     }
 
+    func testLocalCalculation() {
+        /// Sum all the numbers from from to to
+        /// - Complexity: initial: O(to-from) memoized: O(1)
+        func summit(from: Int, to: Int) -> Int {
+            /// Sum all the numbers from from to to
+            /// - Complexity: O(to-from)
+            func sumSequence(from: Int, to: Int) -> Int {
+                (from...to).reduce(0, +)
+            }
+
+            /// Wrap the arguments to `sumSequence`
+            struct Summer : Hashable {
+                let from: Int
+                let to: Int
+                var sum: Int {
+                    sumSequence(from: from, to: to)
+                }
+            }
+
+            return Summer(from: from, to: to).memoz.sum
+        }
+
+        measure { // average: 0.064, relative standard deviation: 299.894%, values: [0.641700, 0.000073, 0.000020, 0.000015, 0.000014, 0.000028, 0.000015, 0.000013, 0.000013, 0.000013]
+            XCTAssertEqual(1500001500000, summit(from: 1_000_000, to: 2_000_000))
+        }
+    }
+
     func testCachePartition() {
         let uuids = (0...100_000).map({ _ in UUID() })
         measure {

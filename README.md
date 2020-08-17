@@ -124,6 +124,35 @@ try instance.memoz[JSONFormatted: true].get() // pretty
 try instance.memoz[JSONFormatted: false, sorted: true].get() // unformatted & sorted
 ```
 
+## Inline Function Caching
+
+You may want to memoize a function inline without having to make a calculating keyPath in a separate extension. This can be accomplished by wrapping the arguments to the function in a `Hashable` struct, and using an instance as the subject of  `memoz`:
+
+```swift
+/// Sum all the numbers from from to to
+/// - Complexity: initial: O(to-from) memoized: O(1)
+func summit(from: Int, to: Int) -> Int {
+    /// Sum all the numbers from from to to
+    /// - Complexity: O(to-from)
+    func sumSequence(from: Int, to: Int) -> Int {
+        (from...to).reduce(0, +)
+    }
+
+    /// Wrap the arguments to `sumSequence`
+    struct Summer : Hashable {
+        let from: Int
+        let to: Int
+        var sum: Int {
+            sumSequence(from: from, to: to)
+        }
+    }
+
+    return Summer(from: from, to: to).memoz.sum
+}
+```
+
+This approach does introduce a lot of boilerplate to the memoization process, but an advantage is that the entire implementation can be encapsulated, and other types don't need to be "polluted" with calculated properties that otherwise won't be used.
+
 ## Sequential Memoization
 
 Note that the `memoz` only caches the adjacent keyPath. If you would like to memoize multiple sequential key paths, this can be done with multiple chained `memoz` calls, like so:
