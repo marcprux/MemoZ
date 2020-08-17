@@ -250,6 +250,21 @@ final class MemoZTests: XCTestCase {
     }
 }
 
+final class CacheTests: XCTestCase {
+    func testCacheAPI() {
+        let cache = Cache<Int, String>()
+
+        func cachedDescription(for number: Int) -> String {
+            cache.fetch(key: number, create: { key in
+                String(describing: key)
+            })
+        }
+
+        XCTAssertEqual("123", cachedDescription(for: 123))
+        XCTAssertEqual("123", cachedDescription(for: 123)) // this will return the cached result
+    }
+}
+
 extension MemoizationCache {
     /// A domain-specific cache
     static let domainCache = MemoizationCache()
