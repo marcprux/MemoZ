@@ -57,7 +57,7 @@ MemoZ is distributed as a source-level Swift Package, which can be added to your
 
   1. `File` > `Swift packages` > `Add Package Dependency...`,
   2. Add the MemoZ repository: `https://github.com/marcprux/MemoZ`
-  3. Use `master` or pin the appropriate version
+  3. Use `1.0.0` (or `master` for bleeding-edge)
   4. Add `import MemoZ` to any source file that will use `memoz`
 
 Alternatively, if you are trying to minimize dependencies, you can simply copy the `MemoZ.swift` file into your project: all the code is in that single small file, which itself has no dependencies of its own (other than Foundation).
