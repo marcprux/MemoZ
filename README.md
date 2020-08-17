@@ -159,7 +159,8 @@ This approach does introduce a lot of boilerplate to the memoization process, bu
 Note that the `memoz` only caches the adjacent keyPath. If you would like to memoize multiple sequential key paths, this can be done with multiple chained `memoz` calls, like so:
 
 ```swift
-instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp…
+let costlyExpensiveSlowValue = instance.costlyProp.expensizeProp.slowProp
+let fastQuickSpeedyValue = instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp
 ```
 
 ## Thread Safety
