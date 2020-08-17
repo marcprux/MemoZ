@@ -341,7 +341,7 @@ An additional advantage of using your own cache is that you can enable & disable
 
 Any caching solution, memoization included, introduces some performance overhead in time and space. As such, care should be taken that the memoized computation is actually costly enough to make caching worthwhile. 
 
-For example, the following (pointless) memoization of a constant value would result in a 2x performance degradation:
+For example, the following (pointless) memoization of a constant value would result in a **3x** performance degradation:
 
 ```swift
 struct Pointless : Hashable {
@@ -351,8 +351,8 @@ struct Pointless : Hashable {
 
 func testPointlessComputation() {
     let pointless = Pointless()
-    measure { // average: 0.002, relative standard deviation: 20.745%, values: [0.002702, 0.001852, 0.001622, 0.001521, 0.001567, 0.001608, 0.002050, 0.001541, 0.001496, 0.001484]
-        for _ in 1...1_000 {
+    measure { // average: 0.013, relative standard deviation: 10.553%, values: [0.017202, 0.014706, 0.013114, 0.012666, 0.012782, 0.012689, 0.012770, 0.012431, 0.012440, 0.013157]
+        for _ in 1...10_000 {
             XCTAssertEqual(1, pointless.alwaysOne)
         }
     }
@@ -360,8 +360,8 @@ func testPointlessComputation() {
 
 func testPointlessMemoization() {
     let pointless = Pointless()
-    measure { // average: 0.005, relative standard deviation: 21.496%, values: [0.007675, 0.004570, 0.004279, 0.004338, 0.004126, 0.004233, 0.004466, 0.004147, 0.004400, 0.004680]
-        for _ in 1...1_000 {
+    measure { // average: 0.040, relative standard deviation: 3.971%, values: [0.043689, 0.039205, 0.038396, 0.041741, 0.038969, 0.039193, 0.039041, 0.039618, 0.038810, 0.038761]
+        for _ in 1...10_000 {
             XCTAssertEqual(1, pointless.alwaysOneZ)
         }
     }
