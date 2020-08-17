@@ -6,13 +6,14 @@
 MemoZ provides zero-line caching for Swift properties:
 
 ```swift
-let slow: X = x.costly        // O(N)
-let fast: X = x.memoz.costly  // O(1)
+let value = MyValueType()
+let slow = value.expensiveCalculation        // O(N)
+let fast = value.memoz.expensiveCalculation  // O(1)
 ```
 
 ## How does it work?
 
-MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`.
+MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the calculated property be a referentially transparent operation (dependent only on the subject value and no other external state).
 
 ## Sample usage
 
