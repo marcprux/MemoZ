@@ -132,6 +132,30 @@ final class MemoZTests: XCTestCase {
         }
     }
 
+    struct Pointless : Hashable {
+        var alwaysOne: Int { 1 }
+        var alwaysOneZ: Int { memoz.alwaysOne }
+    }
+
+    func testPointlessComputation() {
+        let pointless = Pointless()
+        measure { // average: 0.002, relative standard deviation: 20.745%, values: [0.002702, 0.001852, 0.001622, 0.001521, 0.001567, 0.001608, 0.002050, 0.001541, 0.001496, 0.001484]
+            for _ in 1...1_000 {
+                XCTAssertEqual(1, pointless.alwaysOne)
+            }
+        }
+    }
+
+    func testPointlessMemoization() {
+        let pointless = Pointless()
+        measure { // average: 0.005, relative standard deviation: 21.496%, values: [0.007675, 0.004570, 0.004279, 0.004338, 0.004126, 0.004233, 0.004466, 0.004147, 0.004400, 0.004680]
+            for _ in 1...1_000 {
+                XCTAssertEqual(1, pointless.alwaysOneZ)
+            }
+        }
+    }
+
+
     func testValueTypes() {
         let str = "xyz" as NSString
         XCTAssertEqual(3, (str as String).memoz.count)
@@ -270,14 +294,16 @@ extension Sequence {
     }
 }
 
-extension Array where Element == String {
+extension Array where Element: Collection & Hashable {
     /// "C", "BB", "AAA"
-    var sortedByCountZ: [String] {
+    var sortedByCountZ: [Element] {
         self.memoz[sorting: \.count]
     }
+}
 
+extension Array where Element: Comparable & Hashable {
     /// "AAA", "BB", "C"
-    var sortedBySelfZ: [String] {
+    var sortedBySelfZ: [Element] {
         self.memoz[sorting: \.self]
     }
 }

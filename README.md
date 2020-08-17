@@ -150,14 +150,16 @@ extension Sequence {
     }
 }
 
-extension Array where Element == String {
+extension Array where Element: Collection & Hashable {
     /// "C", "BB", "AAA"
-    var sortedByCountZ: [String] {
+    var sortedByCountZ: [Element] {
         self.memoz[sorting: \.count]
     }
+}
 
+extension Array where Element: Comparable & Hashable {
     /// "AAA", "BB", "C"
-    var sortedBySelfZ: [String] {
+    var sortedBySelfZ: [Element] {
         self.memoz[sorting: \.self]
     }
 }
@@ -267,6 +269,38 @@ The `countLimit` is an approximate maximum that the cache should hold. As per `N
 
 An additional advantage of using your own cache is that you can enable & disable it (by setting it to nil) on a global basis from a single location and compare the performance of your app with caching disabled.
 
+## Measuring Performance 
+
+Any caching solution, memoization included, introduces some performance overhead in time and space. As such, care should be taken that the memoized computation is actually costly enough to make caching worthwhile. 
+
+For example, the following (pointless) memoization of a constant value would result in a 2x performance degradation:
+
+```
+struct Pointless : Hashable {
+    var alwaysOne: Int { 1 } // 1, always
+    var alwaysOneZ: Int { memoz.alwaysOne } // we'd be better off without memoization!
+}
+
+func testPointlessComputation() {
+    let pointless = Pointless()
+    measure { // average: 0.002, relative standard deviation: 20.745%, values: [0.002702, 0.001852, 0.001622, 0.001521, 0.001567, 0.001608, 0.002050, 0.001541, 0.001496, 0.001484]
+        for _ in 1...1_000 {
+            XCTAssertEqual(1, pointless.alwaysOne)
+        }
+    }
+}
+
+func testPointlessMemoization() {
+    let pointless = Pointless()
+    measure { // average: 0.005, relative standard deviation: 21.496%, values: [0.007675, 0.004570, 0.004279, 0.004338, 0.004126, 0.004233, 0.004466, 0.004147, 0.004400, 0.004680]
+        for _ in 1...1_000 {
+            XCTAssertEqual(1, pointless.alwaysOneZ)
+        }
+    }
+}
+```
+
+An advantage of `MemoZ`'s zero-line memoization is that you can easily put in measuring tests to ensure that memoization is actually worthwhile. A useful statistic is `XCTest`'s `measurte` function, which runs the block 10 times and reports the individual times and the standard deviation between the times. A higher standard deviation generally indicates that the memoization is yielding a performance gain.
 
 ## Gotchas
 
