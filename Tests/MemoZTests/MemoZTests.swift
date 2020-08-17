@@ -167,6 +167,7 @@ final class MemoZTests: XCTestCase {
         XCTAssertEqual("Xyz", (str as NSString).memoz.capitalized) // we should get a deprecation warning here
     }
 
+    #if swift(>=5.3) // 5.3+ or else: struct declaration cannot close over value 'sumSequence' defined in outer scope
     func testLocalCalculation() {
         /// Sum all the numbers from from to to
         /// - Complexity: initial: O(to-from) memoized: O(1)
@@ -193,7 +194,8 @@ final class MemoZTests: XCTestCase {
             XCTAssertEqual(1500001500000, summit(from: 1_000_000, to: 2_000_000))
         }
     }
-
+    #endif
+    
     func testCachePartition() {
         let uuids = (0...100_000).map({ _ in UUID() })
         measure {
