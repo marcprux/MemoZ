@@ -3,42 +3,53 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
 
-MemoZ provides zero-line caching for Swift properties:
+MemoZ provides a transparent caching API for computed properties on `Hashable`s:
 
 ```swift
+import MemoZ
 let value = MyValueType()
-let slow = value.expensiveCalculation        // O(N)
-let fast = value.memoz.expensiveCalculation  // O(1)
+let slow = value.expensiveComputation        // O(N)
+let fast = value.memoz.expensiveComputation  // O(1)
 ```
 
 ## How does it work?
 
-MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the calculated property be a referentially transparent operation (dependent only on the subject value and no other external state).
+MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the computed property be a referentially transparent operation (dependent only on the subject value and no other external state).
 
 ## Sample usage
+
+The recommended convention for memoizing expensive computations is to expose the property as `prop` and to expose a memoized version of the property named with a `Z` suffix.
 
 ```swift
 import MemoZ
 
 extension Sequence where Element : Numeric {
-    /// Adds up all the numbers
-    var sum: Element { reduce(0, +) }
+    /// Computes the sum of all the elements.
+    /// - Complexity: O(N)
+    var sum: Element { self.reduce(0, +) }
 }
 
+extension Sequence where Element : Numeric, Self : Hashable {
+    /// Computes & memoizes the sum of all the elements.
+    /// - Complexity: Initial: O(N) MemoiZed: O(1)
+    var sumZ: Element { self.memoz.sum }
+}
+
+// Measure the performance of non-memoized & memoized `sum`
 class MemoZDemo: XCTestCase {
+    /// A sequence of integers ranging from -1M through +1M
     let millions = (-1_000_000...1_000_000)
-    
-    func testCalculatedSum() throws {
-        // average: 1.325, relative standard deviation: 1.182%
+
+    func testCalculatedSum() {
+        // average: 1.299, relative standard deviation: 0.509%, values: [1.312717, 1.296008, 1.306766, 1.298375, 1.299257, 1.303043, 1.296738, 1.294311, 1.288839, 1.293301]
         measure { XCTAssertEqual(millions.sum, 0) }
     }
 
-    func testMemoizedSum() throws {
-        // average: 0.130, relative standard deviation: 299.947% <- **10x speed gain**
-        measure { XCTAssertEqual(millions.memoz.sum, 0) }
+    func testMemoizedSum() {
+        // average: 0.133, relative standard deviation: 299.900%, values: [1.332549, 0.000051, 0.000018, 0.000032, 0.000110, 0.000021, 0.000016, 0.000015, 0.000014, 0.000123]
+        measure { XCTAssertEqual(millions.sumZ, 0) }
     }
 }
-
 ```
 
 
@@ -65,7 +76,7 @@ Alternatively, if you are trying to minimize dependencies, you can simply copy t
 
 ## Error Handling
 
-MemoZ uses the keyPath as a key for the memoization cache, and as such, need to be performed with calculated properties (which can be implemented via extensions). Property accessors cannot throw errors, but error handling can be accomplished using the `Result` type. For example:
+MemoZ uses the keyPath as a key for the memoization cache, and as such, are performed on computed properties (which can be implemented via extensions). Computed property accessors cannot throw errors, but error handling can be accomplished using the `Result` type. For example:
 
 ```swift
 extension BidirectionalCollection {
@@ -87,19 +98,19 @@ XCTAssertThrowsError(try emptyArray.memoz.firstAndLast.get())
 
 ## Memoizing Functions
 
-Earlier versions of this library permitted the memoization of a function (either an anonymous inline closure or a named function) which was useful for those one-off calculation for which creating an extension on the subject type with a calculated property might be overkill. 
+Earlier versions of this library permitted the memoization of a function (either an anonymous inline closure or a named function) which was useful for those one-off calculation for which creating an extension on the subject type with a computed property might be overkill. 
 
 The two problems with this approach were:
 
   1. Unlike a keypath, a function is not `Hashable` and so cannot participate in the cache key; this was worked around by keying on the calling source code file & line, but that was quite fragile.
   2. It is too easy to inadvertently capture local state in the function that contributed to the result value, but which wouldn't be included in the cache key, this leading the incorrect cache results being returned.
 
-Forcing the calculation to be performed in a named property solves #1, and, while it isn't possible to enforce true purity in swift (e.g., nothing prevents your calculated property from using `random()`), forcing the calculation to be dependant solely on the state of the subject instance means that the subject will always itself be a valid cache key.
+Forcing the calculation to be performed in a named property solves #1, and, while it isn't possible to enforce true purity in swift (e.g., nothing prevents your computed property from using `random()`), forcing the computation to be dependant solely on the state of the subject instance means that the subject will always itself be a valid cache key.
 
 
 ## Parameterizing Memoization
 
-Although you cannot memoize an arbitrary function call, you can parameterize the memoization calculation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
+Although you cannot memoize an arbitrary function call, you can parameterize the computation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
 
 ```swift
 extension Encodable {
@@ -123,6 +134,41 @@ Since all of the parameter arguments to the keypath are themselves `Hashable`, y
 ```swift
 try instance.memoz[JSONFormatted: true].get() // pretty
 try instance.memoz[JSONFormatted: false, sorted: true].get() // unformatted & sorted
+```
+
+## Keying on KeyPath
+
+The keyPath for memoizing can itself take a `keyPath` (since it is a `Hashable` parameter to the subscript), which allows memozied permutations on computations that work with key paths. For example:
+
+```swift
+extension Sequence {
+    /// Sorts the sequence by the the given `keyPath` of the element
+    subscript<T: Comparable>(sorting sortPath: KeyPath<Element, T>) -> [Element] {
+        return self.sorted(by: {
+            $0[keyPath: sortPath] < $1[keyPath: sortPath]
+        })
+    }
+}
+
+extension Array where Element == String {
+    /// "C", "BB", "AAA"
+    var sortedByCountZ: [String] {
+        self.memoz[sorting: \.count]
+    }
+
+    /// "AAA", "BB", "C"
+    var sortedBySelfZ: [String] {
+        self.memoz[sorting: \.self]
+    }
+}
+
+extension MemoZTests {
+    func testMemoKeyedSubscript() {
+        let strs = ["AAA", "C", "BB"]
+        XCTAssertEqual(strs.sortedBySelfZ, ["AAA", "BB", "C"])
+        XCTAssertEqual(strs.sortedByCountZ, ["C", "BB", "AAA"])
+    }
+}
 ```
 
 ## Inline Function Caching
@@ -152,7 +198,7 @@ func summit(from: Int, to: Int) -> Int {
 }
 ```
 
-This approach does introduce a lot of boilerplate to the memoization process, but an advantage is that the entire implementation can be encapsulated, and other types don't need to be "polluted" with calculated properties that otherwise won't be used.
+This approach does introduce a lot of boilerplate to the memoization process, but an advantage is that the entire implementation can be encapsulated, and other types don't need to be "polluted" with computed properties that otherwise won't be used.
 
 ## Sequential Memoization
 
@@ -165,7 +211,34 @@ let fastQuickSpeedyValue = instance.memoz.costlyProp.memoz.expensizeProp.memoz.s
 
 ## Thread Safety
 
-MemoZ is safe to use from multiple threads but its caching accessors do not lock on access, which means that multiple threads simultaneously trying to memoize the same key path may wind up invoking the same calculation twice. It should always be assumed that any calculation performed in the target's keyPath might be run simultaneously on multiple threads, either when the cache is initially loaded, or subsequently due to re-evaluation after a cache eviction.
+MemoZ is as thread-safe as the underlying property accessor; if 
+
+```swift
+extension MemoZDemo {
+    /// A bunch of random numbers from the given offset
+    func rangeLimts(count: Int = 20, offset: Int = 1_000_000) -> [Int] {
+        (0..<count).map({ $0 + offset }).shuffled()
+    }
+
+    func testCalculatedSumParallel() {
+        let ranges = rangeLimts()
+        measure { // average: 7.115, relative standard deviation: 3.274%, values: [6.579956, 6.785192, 7.074619, 7.123436, 7.242951, 7.295850, 7.326060, 7.285277, 7.249500, 7.187203]
+            DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
+                XCTAssertEqual((-ranges[i]...ranges[i]).sum, 0)
+            }
+        }
+    }
+
+    func testMemoziedSumParallel() {
+        let ranges = rangeLimts()
+        measure { // average: 0.671, relative standard deviation: 299.856%, values: [6.708572, 0.000535, 0.000298, 0.000287, 0.000380, 0.000400, 0.000337, 0.000251, 0.000225, 0.000183]
+            DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
+                XCTAssertEqual((-ranges[i]...ranges[i]).sumZ, 0)
+            }
+        }
+    }
+}
+```
 
 
 ## Cache Customization
@@ -197,7 +270,7 @@ An additional advantage of using your own cache is that you can enable & disable
 
 ## Gotchas
 
-Care must be taken that the calculation is truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions typically take the current locale into account, so if the locale changes between invocations, the difference may not be seen when results are returned from the memoization cache.
+Care must be taken that memozied computations are truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions often take external environment settings (such as the current locale) into account, so if the environment changes between invocations, the memoized result will not be the same as the computed result.
 
 
 ## Implementation Details

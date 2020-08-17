@@ -29,10 +29,17 @@ extension Hashable {
     @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, T>) -> T {
         cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
             self[keyPath: keyPath]
-        } as? T ?? mismatched(self[keyPath: keyPath], active: cache != nil, keyPath: keyPath)
+        } as? T ?? mismatched(self[keyPath: keyPath], active: cache != nil)
     }
 
-    @usableFromInline func mismatched<T>(_ val: T, active: Bool, keyPath: KeyPath<Self, T>) -> T {
+    @available(OSX 10.12, iOS 12, *)
+    @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, () -> T>) -> T {
+        cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
+            self[keyPath: keyPath]()
+        } as? T ?? mismatched(self[keyPath: keyPath](), active: cache != nil)
+    }
+
+    @usableFromInline func mismatched<T>(_ val: T, active: Bool) -> T {
         if !active {
             print("MemoZ Warning: cache return value did not match expected type", T.self, "… this indicates a bug in MemoZ or NSCache")
         }

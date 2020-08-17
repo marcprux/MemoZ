@@ -4,8 +4,62 @@ import Dispatch
 import MemoZ
 
 extension Sequence where Element : Numeric {
-    var sum: Element { reduce(0, +) }
+    /// The sum of all the elements.
+    /// - Complexity: O(N)
+    var sum: Element { self.reduce(0, +) }
+}
+
+extension Sequence where Element : Numeric, Self : Hashable {
+    /// The (memoized) sum of all the elements.
+    /// - Complexity: Initial: O(N) MemoiZed: O(1)
+    var sumZ: Element { self.memoz.sum }
+}
+
+// Measure the performance of non-memoized & memoized `sum`
+class MemoZDemo: XCTestCase {
+    /// A sequence of integers ranging from -1M through +1M
+    let millions = (-1_000_000...1_000_000)
+
+    func testCalculatedSum() {
+        // average: 1.299, relative standard deviation: 0.509%, values: [1.312717, 1.296008, 1.306766, 1.298375, 1.299257, 1.303043, 1.296738, 1.294311, 1.288839, 1.293301]
+        measure { XCTAssertEqual(millions.sum, 0) }
+    }
+
+    func testMemoizedSum() {
+        // average: 0.133, relative standard deviation: 299.900%, values: [1.332549, 0.000051, 0.000018, 0.000032, 0.000110, 0.000021, 0.000016, 0.000015, 0.000014, 0.000123]
+        measure { XCTAssertEqual(millions.sumZ, 0) }
+    }
+}
+
+extension Sequence where Element : Numeric {
+    /// The product of all the elements.
+    /// - Complexity: O(N)
     var product: Element { reduce(1, *) }
+}
+
+extension MemoZDemo {
+    /// A bunch of random numbers from the given offset
+    func rangeLimts(count: Int = 20, offset: Int = 1_000_000) -> [Int] {
+        (0..<count).map({ $0 + offset }).shuffled()
+    }
+
+    func testCalculatedSumParallel() {
+        let ranges = rangeLimts()
+        measure { // average: 7.115, relative standard deviation: 3.274%, values: [6.579956, 6.785192, 7.074619, 7.123436, 7.242951, 7.295850, 7.326060, 7.285277, 7.249500, 7.187203]
+            DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
+                XCTAssertEqual((-ranges[i]...ranges[i]).sum, 0)
+            }
+        }
+    }
+
+    func testMemoziedSumParallel() {
+        let ranges = rangeLimts()
+        measure { // average: 0.671, relative standard deviation: 299.856%, values: [6.708572, 0.000535, 0.000298, 0.000287, 0.000380, 0.000400, 0.000337, 0.000251, 0.000225, 0.000183]
+            DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
+                XCTAssertEqual((-ranges[i]...ranges[i]).sumZ, 0)
+            }
+        }
+    }
 }
 
 extension BinaryInteger where Self.Stride : SignedInteger {
@@ -205,3 +259,34 @@ extension BidirectionalCollection {
         }
     }
 }
+
+
+extension Sequence {
+    /// Sorts the collection by the the given `keyPath` of the element
+    subscript<T: Comparable>(sorting sortPath: KeyPath<Element, T>) -> [Element] {
+        return self.sorted(by: {
+            $0[keyPath: sortPath] < $1[keyPath: sortPath]
+        })
+    }
+}
+
+extension Array where Element == String {
+    /// "C", "BB", "AAA"
+    var sortedByCountZ: [String] {
+        self.memoz[sorting: \.count]
+    }
+
+    /// "AAA", "BB", "C"
+    var sortedBySelfZ: [String] {
+        self.memoz[sorting: \.self]
+    }
+}
+
+extension MemoZTests {
+    func testMemoKeyedSubscript() {
+        let strs = ["AAA", "C", "BB"]
+        XCTAssertEqual(strs.sortedBySelfZ, ["AAA", "BB", "C"])
+        XCTAssertEqual(strs.sortedByCountZ, ["C", "BB", "AAA"])
+    }
+}
+
