@@ -8,16 +8,16 @@ MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-l
 ```swift
 import MemoZ
 let value = SomeHashableValue()
-let slow = value.expensiveComputation            // O(N)
-let stillSlow = value.memoz.expensiveComputation // O(N)
-let fast = value.memoz.expensiveComputation      // O(1)
+let slow = value.expensiveComputation           // O(N)
+let alsoSlow = value.memoz.expensiveComputation // O(N)
+let fast = value.memoz.expensiveComputation     // O(1)
 ```
 
 ## How does it work?
 
 tl;dr: *Magic*
 
-MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the computed property be a referentially transparent operation (dependent only on the subject value and no other external state).
+MemoZ is not really magic: it doesn't somehow speed up the result of an `expensiveComputation` property. Rather, it provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the property computation be pure (no side-effects) and referentially transparent (no inputs other than the subject value).
 
 ## Sample Usage
 
