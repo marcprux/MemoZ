@@ -16,9 +16,9 @@ let fast = value.memoz.expensiveComputation  // O(1)
 
 MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the computed property be a referentially transparent operation (dependent only on the subject value and no other external state).
 
-## Sample usage
+## Sample Usage
 
-The recommended convention for memoizing expensive computations is to expose the property as `prop` and to expose a memoized version of the property named with a `Z` suffix.
+The recommended convention for memoizing expensive computations in the property `prop` is to expose a memoized version of the property named `propZ`.
 
 ```swift
 import MemoZ
