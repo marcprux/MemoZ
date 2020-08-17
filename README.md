@@ -3,12 +3,16 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
 
-MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` that will dynamically pass-through any subsequent keypath invocations and cache the result:
+MemoZ provides zero-line caching for Swift properties:
 
 ```swift
 let slow: X = x.costly        // O(N)
 let fast: X = x.memoz.costly  // O(1)
 ```
+
+## How does it work?
+
+MemoZ provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`.
 
 ## Sample usage
 
