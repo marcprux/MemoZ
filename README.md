@@ -384,6 +384,11 @@ MemoZ is a coarse-grained caching library that maintains a single global cache k
  1. the target `Hashable` instance is a value type 
  2. the predicate keyPath is pure: is must have no side-effects and be referentially transparent
 
+## “Zero-line”?
+
+Many libraries advertise that their capabilities can be used in 1 line of code. Since MemoZ's caching can be added to the same line of code as the property it is caching, it doesn't add any lines of code, and so it is a "zero-liner". 
+
+Technically, one might say it is a “six-character” API (“`memoz.`” ), but “zero-line” sounds better.
 
 ## Other Features
 
