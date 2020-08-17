@@ -103,7 +103,7 @@ Earlier versions of this library permitted the memoization of a function (either
 The two problems with this approach were:
 
   1. Unlike a keypath, a function is not `Hashable` and so cannot participate in the cache key; this was worked around by keying on the calling source code file & line, but that was quite fragile.
-  2. It is too easy to inadvertently capture local state in the function that contributed to the result value, but which wouldn't be included in the cache key, this leading the incorrect cache results being returned.
+  2. It is too easy to inadvertently capture local state in the function that contributed to the result value, but which wouldn't be included in the cache key, thereby leading the incorrect cache results being returned.
 
 Forcing the calculation to be performed in a named property solves #1, and, while it isn't possible to enforce true purity in swift (e.g., nothing prevents your computed property from using `random()`), forcing the computation to be dependant solely on the state of the subject instance means that the subject will always itself be a valid cache key.
 
