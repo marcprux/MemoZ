@@ -72,12 +72,13 @@ Wikipedia describes the technique of [memoization](https://en.wikipedia.org/wiki
 
 ## Setup
 
-MemoZ is distributed as a source-level Swift Package, 
+MemoZ is distributed as a source-level Swift Package.
 
 ### Swift Package Manager (SPM)
 
 The Swift Package Manager is a dependency manager integrated with the Swift build system. To learn how to use the Swift Package Manager for your project, please read the [official documentation](https://github.com/apple/swift-package-manager/blob/master/Documentation/Usage.md).  
-To add MemoZ as a dependency, you have to add it to the `dependencies` of your `Package.swift` file and refer to that dependency in your `target`.
+
+Add MemoZ to the `dependencies` of your `Package.swift` file and refer to that dependency in your `target`.
 
 ```swift
 // swift-tools-version:5.0
@@ -101,14 +102,14 @@ $ swift package resolve
 
 ### Xcode
 
-You can add `MemoZ` to your Xcode Swift project with:
+You can add `MemoZ` to your Xcode Swift project using the "Swift Packages" feature.
 
-  1. `File` > `Swift packages` > `Add Package Dependency...`,
+  1. `File > Swift Packages > Add Package Dependency…`
   2. Add the MemoZ repository: `https://github.com/marcprux/MemoZ`
   3. Use `1.0.0` (or `master` for bleeding-edge)
   4. Add `import MemoZ` to any source file that will use `memoz`
 
-Alternatively, if you are trying to minimize dependencies, you can simply copy the `MemoZ.swift` file into your project: all the code is in that single small file, which itself has no dependencies of its own (other than Foundation).
+Alternatively, if you are trying to minimize dependencies, you can simply copy the `MemoZ.swift` file into your project: all the code is in that single small file, which itself has no dependencies of its own (other than Foundation's `NSCache`).
 
 
 ## Error Handling
@@ -226,11 +227,8 @@ func summit(from: Int, to: Int) -> Int {
 
     /// Wrap the arguments to `sumSequence`
     struct Summer : Hashable {
-        let from: Int
-        let to: Int
-        var sum: Int {
-            sumSequence(from: from, to: to)
-        }
+        let from, to: Int
+        var sum: Int { sumSequence(from: from, to: to) }
     }
 
     return Summer(from: from, to: to).memoz.sum

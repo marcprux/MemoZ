@@ -180,11 +180,8 @@ final class MemoZTests: XCTestCase {
 
             /// Wrap the arguments to `sumSequence`
             struct Summer : Hashable {
-                let from: Int
-                let to: Int
-                var sum: Int {
-                    sumSequence(from: from, to: to)
-                }
+                let from, to: Int
+                var sum: Int { sumSequence(from: from, to: to) }
             }
 
             return Summer(from: from, to: to).memoz.sum
