@@ -29,6 +29,11 @@ class MemoZDemo: XCTestCase {
         // average: 0.133, relative standard deviation: 299.900%, values: [1.332549, 0.000051, 0.000018, 0.000032, 0.000110, 0.000021, 0.000016, 0.000015, 0.000014, 0.000123]
         measure { XCTAssertEqual(millions.sumZ, 0) }
     }
+
+    override func tearDown() {
+        super.tearDown()
+        MemoizationCache.shared.clear() // clear out the global cache
+    }
 }
 
 extension Sequence where Element : Numeric {

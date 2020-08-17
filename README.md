@@ -49,6 +49,11 @@ class MemoZDemo: XCTestCase {
         // average: 0.133, relative standard deviation: 299.900%, values: [1.332549, 0.000051, 0.000018, 0.000032, 0.000110, 0.000021, 0.000016, 0.000015, 0.000014, 0.000123]
         measure { XCTAssertEqual(millions.sumZ, 0) }
     }
+    
+    override func tearDown() {
+        super.tearDown()
+        MemoizationCache.shared.clear() // clear out the global cache
+    }
 }
 ```
 
@@ -64,7 +69,36 @@ Wikipedia describes the technique of [memoization](https://en.wikipedia.org/wiki
 
 ## Setup
 
-MemoZ is distributed as a source-level Swift Package, which can be added to your Xcode project with:
+MemoZ is distributed as a source-level Swift Package, 
+
+### Swift Package Manager (SPM)
+
+The Swift Package Manager is a dependency manager integrated with the Swift build system. To learn how to use the Swift Package Manager for your project, please read the [official documentation](https://github.com/apple/swift-package-manager/blob/master/Documentation/Usage.md).  
+To add MemoZ as a dependency, you have to add it to the `dependencies` of your `Package.swift` file and refer to that dependency in your `target`.
+
+```swift
+// swift-tools-version:5.0
+import PackageDescription
+let package = Package(
+    name: "<Your Product Name>",
+    dependencies: [
+        .package(url: "https://github.com/marcprux/MemoZ.git", .upToNextMajor(from: "1.0.0"))
+    ],
+    targets: [
+        .target(name: "<Your Target Name>", dependencies: ["MemoZ"])
+    ]
+)
+```
+
+After adding the dependency, you can fetch the library with:
+
+```bash
+$ swift package resolve
+```
+
+### Xcode
+
+You can add `MemoZ` to your Xcode Swift project with:
 
   1. `File` > `Swift packages` > `Add Package Dependency...`,
   2. Add the MemoZ repository: `https://github.com/marcprux/MemoZ`
@@ -213,7 +247,9 @@ let fastQuickSpeedyValue = instance.memoz.costlyProp.memoz.expensizeProp.memoz.s
 
 ## Thread Safety
 
-MemoZ is as thread-safe as the underlying property accessor; if 
+MemoZ is as thread-safe as the underlying property computation. The cache is locked for reading and writing, but it should be noted that simultaneous executions of uncached property computations are **not** synchronized, which means that two computations can be performed simultaneously (one of whose results will be cached).
+
+This example shows a `DispatchQueue` executing many memoizations in parallel:
 
 ```swift
 extension MemoZDemo {
@@ -242,6 +278,38 @@ extension MemoZDemo {
 }
 ```
 
+## Cache Cleanup
+
+`MemoZ` uses `NSCache`, which automatically drops values when memory pressure is experienced. The exact details of this process on macOS are vague, but you can also clear out the cache manually.
+
+A common place to perform manual cache clearing in a mobile app is when the app enters the background: emptying the cache will reduce the app's overall memory footprint and thereby reduce the chances that the system will terminate the app (at the cost of needing to re-build the memoization cache if & when the app is again reactivated).
+
+For an `AppDelegate`-based app, you can add:
+
+```swift
+func applicationDidEnterBackground(_ application: UIApplication) {
+    MemoizationCache.shared.clear() // clear out the global cache
+}
+```
+
+Or for SwiftUI:
+
+```swift 
+struct MyApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .background {
+                MemoizationCache.shared.clear() // clear out the global cache
+            }
+        }
+    }
+}
+```
 
 ## Cache Customization
 
@@ -300,11 +368,13 @@ func testPointlessMemoization() {
 }
 ```
 
-An advantage of `MemoZ`'s zero-line memoization is that you can easily put in measuring tests to ensure that memoization is actually worthwhile. A useful statistic is `XCTest`'s `measurte` function, which runs the block 10 times and reports the individual times and the standard deviation between the times. A higher standard deviation generally indicates that the memoization is yielding a performance gain.
+An advantage of `MemoZ`'s zero-line memoization is that you can easily put in measuring tests to ensure that memoization is actually worthwhile. A useful statistic is `XCTest`'s `measure` function, which runs the block 10 times and reports the individual times and the standard deviation between the times. A higher standard deviation generally indicates that the memoization is yielding a performance gain.
 
 ## Gotchas
 
 Care must be taken that memozied computations are truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions often take external environment settings (such as the current locale) into account, so if the environment changes between invocations, the memoized result will not be the same as the computed result.
+
+In general, if your memoization subjects are **pure** value types (i.e., they transitively contain no properties that are reference)
 
 
 ## Implementation Details
