@@ -17,7 +17,9 @@ let fast = value.memoz.expensiveComputation     // O(1)
 
 tl;dr: *Magic*
 
-MemoZ is not really magic: it doesn't somehow speed up the result of an `expensiveComputation` property. Rather, it provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. It is designed to operate on value types (structs & enums), and requires that the property computation be pure (no side-effects) and referentially transparent (no inputs other than the subject value).
+MemoZ is not really magic: it doesn't somehow speed up the result of an `expensiveComputation` property. Rather, it provides an extension to `Hashable` with the property `memoz`, which will return a `Memoization` instance that dynamically passes-through the subsequent property accessor and caches the result in a global `NSCache`. 
+
+It is designed to operate on value types (structs & enums), and requires that the property computation be pure (no side-effects) and referentially transparent (no inputs other than the subject value).
 
 ## Sample Usage
 
@@ -375,8 +377,7 @@ An advantage of `MemoZ`'s zero-line memoization is that you can easily put in me
 
 Care must be taken that memozied computations are truly referentially transparent. It might be tempting to cache results of parsing dates or numbers using built-in static parsing utilities, but be mindful that these functions often take external environment settings (such as the current locale) into account, so if the environment changes between invocations, the memoized result will not be the same as the computed result.
 
-In general, if your memoization subjects are **pure** value types (i.e., they transitively contain no properties that are reference)
-
+In general, if your memoization subjects are **pure** value types (i.e., they transitively contain no properties that are reference types), and the memozied properties are dependent only on the state of the subject, then `memoz` is a safe and transparent operation.
 
 ## Implementation Details
 
