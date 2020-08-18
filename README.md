@@ -6,9 +6,11 @@
 MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-line) caching of computed properties.
 
 ```swift
-import MemoZ
 let value = SomeHashableValue()
 let slow = value.expensiveComputation           // O(N)
+
+import MemoZ
+
 let alsoSlow = value.memoz.expensiveComputation // O(N)
 let fast = value.memoz.expensiveComputation     // O(1)
 ```
