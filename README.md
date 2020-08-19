@@ -9,10 +9,10 @@ MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-l
 let value = SomeHashableValue()
 let slow = value.expensiveComputation           // O(N)
 
-import MemoZ
+import MemoZ // provides Hashable.memoz…
 
-let alsoSlow = value.memoz.expensiveComputation // O(N)
-let fast = value.memoz.expensiveComputation     // O(1)
+let stillSlow = value.memoz.expensiveComputation // O(N)
+let VERY_FAST = value.memoz.expensiveComputation // O(1)
 ```
 
 ## How does it work?
