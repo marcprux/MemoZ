@@ -11,7 +11,7 @@ let slow = value.slowProp // O(Nˣ)
 
 import MemoZ // provides Hashable.memoz…
 
-let stillSlow = value.memoz.slowProp // O(Nˣ)
+let stillSlow = value.memoz.slowProp // O(Nˣ) compute and cache the property
 let VERY_FAST = value.memoz.slowProp // O(1) to retrieve from memoz cache
 ```
 
