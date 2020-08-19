@@ -250,6 +250,31 @@ let costlyExpensiveSlowValue = instance.costlyProp.expensizeProp.slowProp
 let fastQuickSpeedyValue = instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp
 ```
 
+## Laziness
+
+Lazilly evaluation allows expensive computations to be deferred until later. So whereas this function to filter by even numbers will need to only go through all million elements:
+
+```swift
+let million = 1...1_000_000
+measure { // average: 1.158, relative standard deviation: 0.909%, values: [1.172126, 1.171695, 1.160608, 1.159658, 1.162762, 1.155741, 1.134647, 1.162453, 1.150810, 1.149786]
+    XCTAssertEqual(2, million.filter(\.isEven).first)
+}
+```
+
+The lazy version will just go though 2 elements:
+
+```swift
+let million = 1...1_000_000
+measure { // average: 0.000, relative standard deviation: 245.818%, values: [0.001246, 0.000049, 0.000024, 0.000021, 0.000020, 0.000043, 0.000027, 0.000020, 0.000020, 0.000019]
+    XCTAssertEqual(2, million.lazy.filter(\.isEven).first)
+}
+```
+
+Memoization can be thought of as the opposite of laziness: rather than lazily deferring computations until the very last moment, memoization eagerly computes an entire value just once. 
+
+Both memoization and laziness require that subsequent operations be referentially transparent, but laziness imposes the additional restriction that any lazily-evaluated computations must be deferrable (via the `@escaping` closure parameter). You should avoid memoizing lazy sequences, since the creation of the lazy sequence itself is usually already very fast, and memoizing a lazy chain of operations will result in any escaping function closures being captured in the cache.
+
+
 ## Thread Safety
 
 MemoZ is as thread-safe as the underlying property computation. The cache is locked for reading and writing, but it should be noted that simultaneous executions of uncached property computations are **not** synchronized, which means that two computations can be performed simultaneously (one of whose results will be cached).

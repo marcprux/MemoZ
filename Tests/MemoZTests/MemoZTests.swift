@@ -160,7 +160,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-
+    @available(*, deprecated) // so we don't get deprecation warnings for .memoz on AnyObject
     func testValueTypes() {
         let str = "xyz" as NSString
         XCTAssertEqual(3, (str as String).memoz.count)
@@ -224,6 +224,20 @@ final class MemoZTests: XCTestCase {
         }
     }
     #endif
+
+    func testFilterEager() {
+        let million = 1...1_000_000
+        measure { // average: 1.158, relative standard deviation: 0.909%, values: [1.172126, 1.171695, 1.160608, 1.159658, 1.162762, 1.155741, 1.134647, 1.162453, 1.150810, 1.149786]
+            XCTAssertEqual(2, million.filter(\.isEven).first)
+        }
+    }
+
+    func testFilterLazy() {
+        let million = 1...1_000_000
+        measure { // average: 0.000, relative standard deviation: 245.818%, values: [0.001246, 0.000049, 0.000024, 0.000021, 0.000020, 0.000043, 0.000027, 0.000020, 0.000020, 0.000019]
+            XCTAssertEqual(2, million.lazy.filter(\.isEven).first)
+        }
+    }
 
     #if !os(Linux)
     func testCacheThreading() {
