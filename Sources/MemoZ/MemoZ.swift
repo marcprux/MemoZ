@@ -209,14 +209,15 @@ public final class Cache<Key : Hashable, Value> {
             defer { if exclusive { objc_sync_exit(lockOrValue) } }
 
             let value = try create(key)
-            //assert(!exclusive || lockOrValue.val == nil)
-            if exclusive {
-                lockOrValue.val = value // fill in the locked value's value
-            }
-            // when exclusive, we update the existing key; otherwise we overwrite with a new (unsynchronized) value
-            let cacheValue = exclusive ? lockOrValue : .init(value)
 
-            cache.setObject(cacheValue, forKey: keyRef)
+            if exclusive {
+                // when exclusive, we update the existing value's pointer…
+                lockOrValue.val = value
+            } else {
+                // …otherwise we overwrite with a new (unsynchronized) value
+                cache.setObject(Ref(value), forKey: keyRef)
+            }
+
             return value
         }
     }
