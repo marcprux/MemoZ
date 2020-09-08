@@ -135,10 +135,10 @@ public extension MemoizationCache {
 /// Wrapper around `NSCache` that allows keys/values to be value types and has an atomic `fetch` option.
 @available(OSX 10.12, iOS 12, *)
 public final class Cache<Key : Hashable, Value> {
-    private typealias CacheType = NSCache<KeyRef<Key>, Ref<Value?>>
+    @usableFromInline typealias CacheType = NSCache<KeyRef<Key>, Ref<Value?>>
 
     /// We work with an internal cache because “Extension of a generic Objective-C class cannot access the class's generic parameters at runtime”
-    private let cache = CacheType()
+    @usableFromInline let cache = CacheType()
 
     // private let logger = LoggingDelegate()
 
@@ -175,13 +175,48 @@ public final class Cache<Key : Hashable, Value> {
     }
 
     /// Gets the instance from the cache, or `create`s it if is not present
-    public func fetch(key: Key, create: (Key) throws -> (Value)) rethrows -> Value {
-        let keyRef = KeyRef(key)
-        if let value = cache.object(forKey: keyRef)?.val {
-            return value
-        } else {
+    @inlinable public func fetch(key: Key, exclusive: Bool = false, create: (Key) throws -> (Value)) rethrows -> Value {
+        // cache is thread safe, so we don't need to sync; but one possible advantage of syncing is that two threads won't try to generate the value for the same key at the same time, but in an environment where we are pre-populating the cache from multiple threads, it is probably better to accept the multiple work items rather than cause the process to be serialized
+        let keyRef = KeyRef(key) // NSCache requires that the key be an NSObject subclass
+        // quick lockless check for the object; we will check again inside any exclusive block
+        if let object = cache.object(forKey: keyRef)?.val {
+            return object
+        }
+
+        var lockOrValue: Ref<Value?>
+        do {
+            objc_sync_enter(cache)
+            defer { objc_sync_exit(cache) }
+
+            if let lockValue = cache.object(forKey: keyRef) {
+                if exclusive { objc_sync_enter(lockValue) } // line up behind the create() block
+                defer { if exclusive { objc_sync_exit(lockValue) } }
+
+                if let value = lockValue.val {
+                    return value
+                } else {
+                    lockOrValue = lockValue // empty value means use the ref as a lock
+                }
+            } else {
+                lockOrValue = Ref(nil) // empty value: create a new empty Ref (i.e., the lock)
+                cache.setObject(lockOrValue, forKey: keyRef)
+            }
+        }
+
+        do {
+            // lock the object for creation
+            if exclusive { objc_sync_enter(lockOrValue) }
+            defer { if exclusive { objc_sync_exit(lockOrValue) } }
+
             let value = try create(key)
-            cache.setObject(Ref(value), forKey: keyRef)
+            //assert(!exclusive || lockOrValue.val == nil)
+            if exclusive {
+                lockOrValue.val = value // fill in the locked value's value
+            }
+            // when exclusive, we update the existing key; otherwise we overwrite with a new (unsynchronized) value
+            let cacheValue = exclusive ? lockOrValue : .init(value)
+
+            cache.setObject(cacheValue, forKey: keyRef)
             return value
         }
     }
@@ -211,8 +246,8 @@ public final class Cache<Key : Hashable, Value> {
 
 /// A reference wrapper around another type; this will typically be used to provide reference semantics for value types
 /// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-final class Ref<T> {
-    var val: T
+@usableFromInline final class Ref<T> {
+    @usableFromInline var val: T
     @inlinable init(_ val: T) { self.val = val }
 }
 
