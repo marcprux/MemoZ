@@ -250,9 +250,9 @@ let costlyExpensiveSlowValue = instance.costlyProp.expensizeProp.slowProp
 let fastQuickSpeedyValue = instance.memoz.costlyProp.memoz.expensizeProp.memoz.slowProp
 ```
 
-## Laziness
+## Memoization vs. Laziness
 
-Lazilly evaluation allows expensive computations to be deferred until later. So whereas this function to filter by even numbers will need to only go through all million elements:
+Lazy evaluation allows expensive computations to be deferred until later. So whereas this function to filter by even numbers will need to only go through all million elements:
 
 ```swift
 let million = 1...1_000_000
@@ -421,7 +421,7 @@ Technically, one might say it is a “six-character” API (“`memoz.`” ), bu
 
 ## Other Features
 
-MicoMemo also exposes its own `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference `AnyObject` instances for keys and values). 
+MemoZ also exposes its own `Cache` instance that wraps an `NSCache` and permits caching value types (`NSCache` itself is limited to reference `AnyObject` instances for keys and values). 
 
 The cache itself is not specific to memoization, so it can cache the results of an arbitrary function, at the cost of some additional book-keeping and cache key ceremony.
 
