@@ -57,7 +57,7 @@ extension MemoZDemo {
         }
     }
 
-    func testMemoziedSumParallel() {
+    func testMemoizedSumParallel() {
         let ranges = rangeLimts()
         measure { // average: 0.671, relative standard deviation: 299.856%, values: [6.708572, 0.000535, 0.000298, 0.000287, 0.000380, 0.000400, 0.000337, 0.000251, 0.000225, 0.000183]
             DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
@@ -283,6 +283,35 @@ final class CacheTests: XCTestCase {
         XCTAssertEqual("123", cachedDescription(for: 123))
         XCTAssertEqual("123", cachedDescription(for: 123)) // this will return the cached result
     }
+
+    /// Tracker for testCacheKeyHits
+    private static var testCacheKeyHitsCount = 0
+
+    /// Ensures that a cache will successfully return the value for the given key
+    func testCacheKeyHits() {
+        let cache = Cache<UUID, String>()
+        let key = UUID()
+        var hitCount = Self.testCacheKeyHitsCount
+
+        func fetch() -> String {
+            cache.fetch(key: key) { key in
+                Self.testCacheKeyHitsCount += 1
+                return ""
+            }
+        }
+
+        let _ = fetch()
+        hitCount += 1
+        XCTAssertEqual(1, Self.testCacheKeyHitsCount)
+
+        for _ in 1...100 {
+            let _ = fetch()
+            // hitCount += 1 // should not increment!
+            XCTAssertEqual(hitCount, Self.testCacheKeyHitsCount)
+        }
+    }
+
+
 }
 
 extension MemoizationCache {

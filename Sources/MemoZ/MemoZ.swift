@@ -129,18 +129,18 @@ public extension MemoizationCache {
     static let shared = MemoizationCache()
 }
 
-
 // MARK: Cache
 
 /// Wrapper around `NSCache` that allows keys/values to be value types and has an atomic `fetch` option.
 @available(OSX 10.12, iOS 12, *)
 public final class Cache<Key : Hashable, Value> {
-    @usableFromInline typealias CacheType = NSCache<KeyRef<Key>, Ref<Value?>>
+    @usableFromInline typealias CacheType = NSCache<KeyRef<Key>, ValRef<Value?>>
 
     /// We work with an internal cache because “Extension of a generic Objective-C class cannot access the class's generic parameters at runtime”
     @usableFromInline let cache = CacheType()
 
     // private let logger = LoggingDelegate()
+    public let lock = DispatchQueue(label: "MemoZCacheValueLock")
 
     public init(name: String = "\(#file):\(#line)", countLimit: Int? = 0) {
         self.cache.name = name
@@ -150,9 +150,14 @@ public final class Cache<Key : Hashable, Value> {
         }
     }
 
+    /// Performs an operation on the reference, optionally locking it first
+    @usableFromInline func withLock<T>(exclusive: Bool = true, action: () throws -> T) rethrows -> T {
+        try exclusive ? self.lock.sync { try action() } : action()
+    }
+
     private class LoggingDelegate : NSObject, NSCacheDelegate {
         func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
-            if let obj = obj as? Ref<Value> {
+            if let obj = obj as? ValRef<Value> {
                 print("evicting", obj.val, "from", Cache<Key, Value>.self)
             } else {
                 print("evicting", obj, "from", Cache<Key, Value>.self)
@@ -167,7 +172,7 @@ public final class Cache<Key : Hashable, Value> {
 
         set {
             if let newValue = newValue {
-                cache.setObject(Ref(.init(newValue)), forKey: KeyRef(key))
+                cache.setObject(ValRef(.init(newValue)), forKey: KeyRef(key))
             } else {
                 cache.removeObject(forKey: KeyRef(key))
             }
@@ -183,39 +188,40 @@ public final class Cache<Key : Hashable, Value> {
             return object
         }
 
-        var lockOrValue: Ref<Value?>
+        var lockOrValue: ValRef<Value?> = ValRef(nil) // empty value: create a new empty ValRef (i.e., the lock)
+
         do {
-            objc_sync_enter(cache)
-            defer { objc_sync_exit(cache) }
+            self.withLock(exclusive: true) {
+
+            }
 
             if let lockValue = cache.object(forKey: keyRef) {
-                if exclusive { objc_sync_enter(lockValue) } // line up behind the create() block
-                defer { if exclusive { objc_sync_exit(lockValue) } }
-
-                if let value = lockValue.val {
+                if let value: Value = lockValue.withLock(exclusive: exclusive, action: {
+                    if let value = lockValue.val {
+                        return value
+                    } else {
+                        lockOrValue = lockValue // empty value means use the ref as a lock
+                        return Value?.none
+                    }
+                }) {
                     return value
-                } else {
-                    lockOrValue = lockValue // empty value means use the ref as a lock
                 }
             } else {
-                lockOrValue = Ref(nil) // empty value: create a new empty Ref (i.e., the lock)
                 cache.setObject(lockOrValue, forKey: keyRef)
             }
         }
 
         do {
-            // lock the object for creation
-            if exclusive { objc_sync_enter(lockOrValue) }
-            defer { if exclusive { objc_sync_exit(lockOrValue) } }
-
-            let value = try create(key)
+            let value = try lockOrValue.withLock(exclusive: exclusive) {
+                try create(key)
+            }
 
             if exclusive {
                 // when exclusive, we update the existing value's pointer…
                 lockOrValue.val = value
             } else {
                 // …otherwise we overwrite with a new (unsynchronized) value
-                cache.setObject(Ref(value), forKey: keyRef)
+                cache.setObject(ValRef(value), forKey: keyRef)
             }
 
             return value
@@ -245,16 +251,39 @@ public final class Cache<Key : Hashable, Value> {
     }
 }
 
-/// A reference wrapper around another type; this will typically be used to provide reference semantics for value types
-/// https://github.com/apple/swift/blob/master/docs/OptimizationTips.rst#advice-use-copy-on-write-semantics-for-large-values
-@usableFromInline final class Ref<T> {
+/// A reference wrapper around another type that enables locking operations.
+@usableFromInline final class ValRef<T> {
     @usableFromInline var val: T
+    @usableFromInline let lock = DispatchQueue(label: "MemoZCacheValueLock")
     @inlinable init(_ val: T) { self.val = val }
+
+    /// Performs an operation on the reference, optionally locking it first
+    @usableFromInline func withLock<T>(exclusive: Bool = true, action: () throws -> T) rethrows -> T {
+        try exclusive ? self.lock.sync { try action() } : action()
+    }
 }
 
+/// A reference that can be used as a cache key for `NSCache` that wraps a hashable key.
+@usableFromInline class KeyRefSwift<T: Hashable> : Hashable {
+    @usableFromInline var val: T
+    @inlinable init(_ val: T) { self.val = val }
+
+    @usableFromInline static func == (lhs: KeyRefSwift<T>, rhs: KeyRefSwift<T>) -> Bool {
+        lhs.val == rhs.val // note: this is never called in ObjectiveC
+    }
+
+    @usableFromInline func hash(into hasher: inout Hasher) {
+        val.hash(into: &hasher)
+    }
+}
+
+#if canImport(ObjectiveC)
+@usableFromInline typealias KeyRef = KeyRefNSObject
+
 /// A reference that can be used as a cache key for `NSCache` that wraps a value type.
-/// Simply using a `Ref` as the cache key doesn't work (for unknown reasons).
-@usableFromInline final class KeyRef<T: Hashable>: NSObject {
+/// Using the `KeyRefSwift` as the cache key doesn't work in ObjectiveC, perhaps since `NSCache` is expecting an `NSObject`.
+/// - TODO: @available(*, deprecated, message: "use KeyRefSwift instead")
+@usableFromInline final class KeyRefNSObject<T: Hashable>: NSObject {
     @usableFromInline let val: T
 
     @usableFromInline init(_ val: T) {
@@ -262,10 +291,10 @@ public final class Cache<Key : Hashable, Value> {
     }
 
     @inlinable override func isEqual(_ object: Any?) -> Bool {
-        return (object as? KeyRef<T>)?.val == self.val
+        return (object as? Self<T>)?.val == self.val
     }
 
-    @inlinable static func ==(lhs: KeyRef, rhs: KeyRef) -> Bool {
+    @inlinable static func ==(lhs: KeyRefNSObject, rhs: KeyRefNSObject) -> Bool {
         return lhs.val == rhs.val
     }
 
@@ -273,3 +302,6 @@ public final class Cache<Key : Hashable, Value> {
         return self.val.hashValue
     }
 }
+#else
+@usableFromInline typealias KeyRef = KeyRefSwift
+#endif
