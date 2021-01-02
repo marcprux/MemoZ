@@ -90,7 +90,7 @@ import PackageDescription
 let package = Package(
     name: "<Your Product Name>",
     dependencies: [
-        .package(url: "https://github.com/marcprux/MemoZ.git", .upToNextMajor(from: "1.1.0"))
+        .package(url: "https://github.com/marcprux/MemoZ.git", .upToNextMajor(from: "1.2.0"))
     ],
     targets: [
         .target(name: "<Your Target Name>", dependencies: ["MemoZ"])
@@ -110,7 +110,7 @@ You can add `MemoZ` to your Xcode Swift project using the "Swift Packages" featu
 
   1. `File > Swift Packages > Add Package Dependency…`
   2. Add the MemoZ repository: `https://github.com/marcprux/MemoZ`
-  3. Use `1.1.0` (or `master` for bleeding-edge)
+  3. Use `1.2.0` (or `master` for bleeding-edge)
   4. Add `import MemoZ` to any source file that will use `memoz`
 
 Alternatively, if you are trying to minimize dependencies, you can simply copy the `MemoZ.swift` file into your project: all the code is in that single small file, which itself has no dependencies of its own (other than Foundation's `NSCache`).
