@@ -1,4 +1,4 @@
-name: MemoZ CI
+name: "MemoZ CI"
 
 on:
   push:
