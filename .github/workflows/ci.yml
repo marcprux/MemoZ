@@ -1,4 +1,4 @@
-name: Swift
+name: MemoZ CI
 
 on:
   push:
