@@ -283,3 +283,4 @@ public final class Cache<Key : Hashable, Value> {
         return self.val.hashValue
     }
 }
+
