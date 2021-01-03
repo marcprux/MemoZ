@@ -115,7 +115,7 @@ final class MemoZTests: XCTestCase {
         XCTAssertEqual("xyz".memoz.withRandomUUIDSuffix, "xyz".memoz.withRandomUUIDSuffix)
     }
 
-    func testCacheCountLimit() {
+    func testCacheCountLimit() throws {
         // mis-use the cache to show that the count limit will purge older references
         let cache = MemoizationCache(countLimit: 10)
         let randid = ""[memoz: cache].withRandomUUIDSuffix
@@ -125,7 +125,11 @@ final class MemoZTests: XCTestCase {
             let _ = "\(i)"[memoz: cache].withRandomUUIDSuffix
         }
 
+        #if !os(macOS)
+        throw XCTSkip("count limit unsupported outside of macOS")
+        #else
         XCTAssertNotEqual(randid, ""[memoz: cache].withRandomUUIDSuffix, "cache should have been purged")
+        #endif
     }
 
     func testSum() {
