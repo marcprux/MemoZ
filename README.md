@@ -4,7 +4,7 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
 
-MemoZ is a cross-platform (Apple & Linux) microframework for [zero-line](#zero-line) caching of computed properties.
+MemoZ is a cross-platform (Apple + Linux + Windows) Swift microframework for [zero-line](#zero-line) caching of computed properties on pure value types.
 
 ```swift
 let value = SomeHashableValue()
@@ -413,6 +413,10 @@ MemoZ is a coarse-grained caching library that maintains a single global cache k
 
  1. the target `Hashable` instance is a value type 
  2. the predicate keyPath is pure: is must have no side-effects and be referentially transparent
+ 
+ ## Platform Differences
+
+MemoZ behaves similiarly on Apple platforms (macOS, iOS, tvOS, watchOS) and non-Apple platforms (Linux, Windows), but note that the underlying `NSCache` implementation differs. On none-Apple platforms, this will probably be using the reference [NSCache.swift](https://github.com/apple/swift-corelibs-foundation/blob/main/Sources/Foundation/NSCache.swift) implementation, which is a simpified cache that does not offer any automatic purging (based on memory pressure or otherwise). The practical result of this is that on non-Apple platforms the application must perform cache maintenance manually in order to prevent unbounded growth and eventual memory exhaustion, whereas on Apple platforms, some amount of automatic cache cleanup should be expected.
 
 ## “Zero-line”?
 
