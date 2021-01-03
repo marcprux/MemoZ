@@ -4,15 +4,21 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+    branches: 
+      - '*'
 
 jobs:
-  ci:
-    name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+  macOS:
+    name: macOS Tests
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: swift test --enable-test-discovery
+      
+  Linux:
+    name: Linux Tests
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
