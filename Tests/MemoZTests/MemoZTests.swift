@@ -15,6 +15,24 @@ extension Sequence where Element : Numeric, Self : Hashable {
     var sumZ: Element { self.memoz.sum }
 }
 
+private extension XCTestCase {
+    func measureHighStddev(block: () -> ()) {
+        #if !os(macOS)
+        // unfortunately the open implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
+        // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation; until this is fixed (or we re-implement `measure`), we need to skip some measure tests
+
+        // simply execute the block itself 10 times without performing the measurement checks
+        measureMetrics([], automaticallyStartMeasuring: false) {
+            block()
+        }
+        #else
+        measure {
+            block()
+        }
+        #endif
+    }
+}
+
 // Measure the performance of non-memoized & memoized `sum`
 class MemoZDemo: XCTestCase {
     /// A sequence of integers ranging from -1M through +1M
@@ -126,7 +144,7 @@ final class MemoZTests: XCTestCase {
     let millions = (-1_000_000)...(+1_000_000)
 
     func testSumCached() {
-        measure { // average: 0.129, relative standard deviation: 299.957%
+        measureHighStddev { // average: 0.129, relative standard deviation: 299.957%
             XCTAssertEqual(0, millions.memoz.sum)
         }
     }
@@ -187,7 +205,7 @@ final class MemoZTests: XCTestCase {
             return Summer(from: from, to: to).memoz.sum
         }
 
-        measure { // average: 0.064, relative standard deviation: 299.894%, values: [0.641700, 0.000073, 0.000020, 0.000015, 0.000014, 0.000028, 0.000015, 0.000013, 0.000013, 0.000013]
+        measureHighStddev { // average: 0.064, relative standard deviation: 299.894%, values: [0.641700, 0.000073, 0.000020, 0.000015, 0.000014, 0.000028, 0.000015, 0.000013, 0.000013, 0.000013]
             XCTAssertEqual(1500001500000, summit(from: 1_000_000, to: 2_000_000))
         }
     }
