@@ -263,27 +263,8 @@ public final class Cache<Key : Hashable, Value> {
     }
 }
 
-/// A reference that can be used as a cache key for `NSCache` that wraps a hashable key.
-@usableFromInline class KeyRefSwift<T: Hashable> : Hashable {
-    @usableFromInline var val: T
-    @inlinable init(_ val: T) { self.val = val }
-
-    @usableFromInline static func == (lhs: KeyRefSwift<T>, rhs: KeyRefSwift<T>) -> Bool {
-        lhs.val == rhs.val // note: this is never called in ObjectiveC
-    }
-
-    @usableFromInline func hash(into hasher: inout Hasher) {
-        val.hash(into: &hasher)
-    }
-}
-
-#if canImport(ObjectiveC)
-@usableFromInline typealias KeyRef = KeyRefNSObject
-
-/// A reference that can be used as a cache key for `NSCache` that wraps a value type.
-/// Using the `KeyRefSwift` as the cache key doesn't work in ObjectiveC, perhaps since `NSCache` is expecting an `NSObject`.
-/// - TODO: @available(*, deprecated, message: "use KeyRefSwift instead")
-@usableFromInline final class KeyRefNSObject<T: Hashable>: NSObject {
+/// A reference that can be used as a cache key for `NSCache` that wraps a value type. Unlike `ValRef`, the key must be an `NSObject`
+@usableFromInline final class KeyRef<T: Hashable>: NSObject {
     @usableFromInline let val: T
 
     @usableFromInline init(_ val: T) {
@@ -294,7 +275,7 @@ public final class Cache<Key : Hashable, Value> {
         return (object as? Self<T>)?.val == self.val
     }
 
-    @inlinable static func ==(lhs: KeyRefNSObject, rhs: KeyRefNSObject) -> Bool {
+    @inlinable static func ==(lhs: KeyRef, rhs: KeyRef) -> Bool {
         return lhs.val == rhs.val
     }
 
@@ -302,6 +283,3 @@ public final class Cache<Key : Hashable, Value> {
         return self.val.hashValue
     }
 }
-#else
-@usableFromInline typealias KeyRef = KeyRefSwift
-#endif
