@@ -49,7 +49,7 @@ class MemoZDemo: XCTestCase {
 
     func testMemoizedSum() {
         // average: 0.133, relative standard deviation: 299.900%, values: [1.332549, 0.000051, 0.000018, 0.000032, 0.000110, 0.000021, 0.000016, 0.000015, 0.000014, 0.000123]
-        measure { XCTAssertEqual(millions.sumZ, 0) }
+        measureHighStddev { XCTAssertEqual(millions.sumZ, 0) }
     }
 
     override func tearDown() {
@@ -81,7 +81,7 @@ extension MemoZDemo {
 
     func testMemoizedSumParallel() {
         let ranges = rangeLimts()
-        measure { // average: 0.671, relative standard deviation: 299.856%, values: [6.708572, 0.000535, 0.000298, 0.000287, 0.000380, 0.000400, 0.000337, 0.000251, 0.000225, 0.000183]
+        measureHighStddev { // average: 0.671, relative standard deviation: 299.856%, values: [6.708572, 0.000535, 0.000298, 0.000287, 0.000380, 0.000400, 0.000337, 0.000251, 0.000225, 0.000183]
             DispatchQueue.concurrentPerform(iterations: ranges.count) { i in
                 XCTAssertEqual((-ranges[i]...ranges[i]).sumZ, 0)
             }
