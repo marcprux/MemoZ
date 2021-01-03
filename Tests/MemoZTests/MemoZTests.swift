@@ -16,13 +16,17 @@ extension Sequence where Element : Numeric, Self : Hashable {
 }
 
 private extension XCTestCase {
+    /// Perform `XCTestCase.measure` for cases where a high standard deviation is expected; this works around an issue on non-macOS XCTest implementations where the maximum standard distribution is hardwired at 10%.
     func measureHighStddev(block: () -> ()) {
         #if !os(macOS)
         // unfortunately the open implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
         // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation; until this is fixed (or we re-implement `measure`), we need to skip some measure tests
 
-        // simply execute the block itself 10 times without performing the measurement checks
-        measureMetrics([], automaticallyStartMeasuring: false) {
+        // simply execute the block itself 10 times…
+        measureMetrics([XCTPerformanceMetric.wallClockTime], automaticallyStartMeasuring: false) {
+            // …without performing the measurements
+            startMeasuring()
+            stopMeasuring()
             block()
         }
         #else
