@@ -140,7 +140,7 @@ public final class Cache<Key : Hashable, Value> {
     @usableFromInline let cache = CacheType()
 
     // private let logger = LoggingDelegate()
-    public let lock = DispatchQueue(label: "MemoZCacheValueLock")
+    @usableFromInline let lock = NSRecursiveLock()
 
     public init(name: String = "\(#file):\(#line)", countLimit: Int? = 0) {
         self.cache.name = name
@@ -152,7 +152,9 @@ public final class Cache<Key : Hashable, Value> {
 
     /// Performs an operation on the reference, optionally locking it first
     @usableFromInline func withLock<T>(exclusive: Bool = true, action: () throws -> T) rethrows -> T {
-        try exclusive ? self.lock.sync { try action() } : action()
+        if exclusive { lock.lock() }
+        defer { if exclusive { lock.unlock() } }
+        return try action()
     }
 
     private class LoggingDelegate : NSObject, NSCacheDelegate {
