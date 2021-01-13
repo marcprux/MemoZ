@@ -191,10 +191,6 @@ public final class Cache<Key : Hashable, Value> {
         var lockOrValue: ValRef<Value?> = ValRef(nil) // empty value: create a new empty ValRef (i.e., the lock)
 
         do {
-            self.withLock(exclusive: true) {
-
-            }
-
             if let lockValue = cache.object(forKey: keyRef) {
                 if let value: Value = lockValue.withLock(exclusive: exclusive, action: {
                     if let value = lockValue.val {
@@ -252,14 +248,17 @@ public final class Cache<Key : Hashable, Value> {
 }
 
 /// A reference wrapper around another type that enables locking operations.
+@available(OSX 10.12, *)
 @usableFromInline final class ValRef<T> {
     @usableFromInline var val: T
-    @usableFromInline let lock = DispatchQueue(label: "MemoZCacheValueLock")
+    @usableFromInline var lock = os_unfair_lock()
     @inlinable init(_ val: T) { self.val = val }
 
     /// Performs an operation on the reference, optionally locking it first
     @usableFromInline func withLock<T>(exclusive: Bool = true, action: () throws -> T) rethrows -> T {
-        try exclusive ? self.lock.sync { try action() } : action()
+        if exclusive { os_unfair_lock_lock(&lock) }
+        defer { if exclusive { os_unfair_lock_unlock(&lock) } }
+        return try action()
     }
 }
 
