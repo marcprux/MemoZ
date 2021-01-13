@@ -248,16 +248,16 @@ public final class Cache<Key : Hashable, Value> {
 }
 
 /// A reference wrapper around another type that enables locking operations.
-@available(OSX 10.12, *)
 @usableFromInline final class ValRef<T> {
     @usableFromInline var val: T
-    @usableFromInline var lock = os_unfair_lock()
+    @usableFromInline let lock = NSRecursiveLock()
+
     @inlinable init(_ val: T) { self.val = val }
 
     /// Performs an operation on the reference, optionally locking it first
     @usableFromInline func withLock<T>(exclusive: Bool = true, action: () throws -> T) rethrows -> T {
-        if exclusive { os_unfair_lock_lock(&lock) }
-        defer { if exclusive { os_unfair_lock_unlock(&lock) } }
+        if exclusive { lock.lock() }
+        defer { if exclusive { lock.unlock() } }
         return try action()
     }
 }
