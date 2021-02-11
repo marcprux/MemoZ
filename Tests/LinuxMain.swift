@@ -1,7 +1,1 @@
-import XCTest
-
-import MemoZTests
-
-var tests = [XCTestCaseEntry]()
-tests += MemoZTests.allTests()
-XCTMain(tests)
+fatalError("Run the tests with `swift test --enable-test-discovery`.")
