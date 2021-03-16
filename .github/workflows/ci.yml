@@ -1,0 +1,28 @@
+name: "MemoZ CI"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: 
+      - '*'
+  schedule:
+    # run at 6AM & 6PM UTC
+    - cron:  '0 6,18 * * *'
+
+jobs:
+  macOS:
+    name: macOS Tests
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: swift test
+      
+  Linux:
+    name: Linux Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: swift test --enable-test-discovery
