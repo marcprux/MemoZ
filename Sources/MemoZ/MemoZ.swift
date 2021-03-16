@@ -25,14 +25,14 @@ extension Hashable {
     /// - Throws: re-throws and errors from `predicate`
     /// - Returns: the result from the `predicate`, either a previously cached value, or the result of executing the `predicate`
     /// - Complexity: around O(1) for a successful cache hit, otherwise the complexity of the keyPath execution
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, T>) -> T {
         cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
             self[keyPath: keyPath]
         } as? T ?? mismatched(self[keyPath: keyPath], active: cache != nil)
     }
 
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable public func memoize<T>(with cache: MemoizationCache? = MemoizationCache.shared, _ keyPath: KeyPath<Self, () -> T>) -> T {
         cache?.fetch(key: .init(subject: self, keyPath: keyPath)) { _ in
             self[keyPath: keyPath]()
@@ -51,7 +51,7 @@ public extension Hashable {
     /// `memoize`s the result of the subsequent path in a global cache.
     /// - Returns: the cached or uncached key path
     /// - Note: Should only be used with value types and functionally-pure key paths
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable var memoz: Memoizer<Self> {
         Memoizer(value: self, cache: .shared)
     }
@@ -60,7 +60,7 @@ public extension Hashable {
     /// - Parameter cache: the custom memoization cache to use; use .shared for the global cache, or `nil` to disable caching
     /// - Returns: the cached or uncached key path
     /// - Note: Should only be used with value types and functionally-pure key paths
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable subscript(memoz cache: MemoizationCache?) -> Memoizer<Self> {
         Memoizer(value: self, cache: cache)
     }
@@ -69,14 +69,14 @@ public extension Hashable {
 public extension Hashable where Self : AnyObject {
     /// `memoize` should only be used on value types. It is permitted but discouraged.
     @available(*, deprecated, message: "memoize should not be used with reference types")
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable var memoz: Memoizer<Self> {
         Memoizer(value: self, cache: .shared)
     }
 }
 
 /// A pass-through instance that memoizes the result of the given key path.
-@available(OSX 10.12, iOS 12, *)
+@available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
 @dynamicMemberLookup public struct Memoizer<Value: Hashable> {
     @usableFromInline let value: Value
     @usableFromInline let cache: MemoizationCache?
@@ -86,7 +86,7 @@ public extension Hashable where Self : AnyObject {
         self.cache = cache
     }
 
-    @available(OSX 10.12, iOS 12, *)
+    @available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
     @inlinable public subscript<T>(dynamicMember keyPath: KeyPath<Value, T>) -> T {
         value.memoize(with: cache, keyPath)
     }
@@ -105,7 +105,7 @@ extension Hashable where Self : AnyObject {
 
 /// A type-erased cache of memoization results, keyed on an arbitray `Hashable` and a key path.
 /// - Seealso: https://stackoverflow.com/questions/37963327/what-is-a-good-alternative-for-static-stored-properties-of-generic-types-in-swif
-@available(OSX 10.12, iOS 12, *)
+@available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
 public typealias MemoizationCache = Cache<MemoizationCacheKey, Any>
 
 /// A key for memoization that uses a `Hashable` instance with a hashable `KeyPath` to form a cache key.
@@ -122,7 +122,7 @@ public struct MemoizationCacheKey : Hashable {
     }
 }
 
-@available(OSX 10.12, iOS 12, *)
+@available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
 public extension MemoizationCache {
     /// A single global cache of memoization results. The cache is thread-safe and backed by an `NSCache` for automatic memory management.
     /// - Seealso: `Hashable.memoize`
@@ -132,7 +132,7 @@ public extension MemoizationCache {
 // MARK: Cache
 
 /// Wrapper around `NSCache` that allows keys/values to be value types and has an atomic `fetch` option.
-@available(OSX 10.12, iOS 12, *)
+@available(OSX 10.12, iOS 12, tvOS 9, watchOS 2, *)
 public final class Cache<Key : Hashable, Value> {
     @usableFromInline typealias CacheType = NSCache<KeyRef<Key>, ValRef<Value?>>
 

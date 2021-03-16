@@ -139,18 +139,6 @@ XCTAssertThrowsError(try emptyArray.memoz.firstAndLast.get())
 ```
 
 
-## Memoizing Functions
-
-Earlier versions of this library permitted the memoization of a function (either an anonymous inline closure or a named function) which was useful for those one-off calculation for which creating an extension on the subject type with a computed property might be overkill. 
-
-The two problems with this approach were:
-
-  1. Unlike a keypath, a function is not `Hashable` and so cannot participate in the cache key; this was worked around by keying on the calling source code file & line, but that was quite fragile.
-  2. It is too easy to inadvertently capture local state in the function that contributed to the result value, but which wouldn't be included in the cache key, thereby leading the incorrect cache results being returned.
-
-Forcing the calculation to be performed in a named property solves #1, and, while it isn't possible to enforce true purity in swift (e.g., nothing prevents your computed property from using `random()`), forcing the computation to be dependant solely on the state of the subject instance means that the subject will always itself be a valid cache key.
-
-
 ## Parameterizing Memoization
 
 Although you cannot memoize an arbitrary function call, you can parameterize the computation by implementing the keyPath as a subscript with `Hashable` parameters. For example, if you want to be able to memoize the results of JSON encoding based on various formatting properties, you might make this extension on `Encodable`:
