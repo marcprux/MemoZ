@@ -1,4 +1,3 @@
-
 #if !os(watchOS) // XCTest not supported
 
 import XCTest
