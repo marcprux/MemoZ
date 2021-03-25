@@ -1,5 +1,4 @@
-#if !os(watchOS) // XCTest not supported
-
+#if !os(watchOS) // no testing on watchOS
 import XCTest
 import Dispatch
 import MemoZ

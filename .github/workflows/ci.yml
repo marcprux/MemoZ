@@ -21,6 +21,7 @@ jobs:
       - run: swift test --enable-test-discovery
 
   watchOS:
+    if: false # disabled until we can work around missing XCTest in non-xcodeproj SPM module
     runs-on: macos-latest
     needs: [Linux] # Linux must pass first
 
