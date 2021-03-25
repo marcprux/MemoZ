@@ -70,7 +70,7 @@ jobs:
         run: swift test
 
   macOS11:
-    id: false # macos-11.0 not yet public
+    if: false # macos-11.0 not yet public
     runs-on: macos-11.0
     needs: [macOS10] # macOS10 must pass first
     steps:
