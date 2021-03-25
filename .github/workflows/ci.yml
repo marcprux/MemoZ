@@ -38,7 +38,7 @@ jobs:
 
   iOS:
     runs-on: macos-latest
-    needs: [watchOS] # watchOS must pass first
+    needs: [Linux] # watchOS must pass first
 
     steps:
       - uses: actions/checkout@v2
