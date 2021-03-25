@@ -337,7 +337,25 @@ final class CacheTests: XCTestCase {
         }
     }
 
+    func testParseCache() {
+        let fr = Locale(identifier: "fr_FR").memoz[parseNumber: "1.234,987"]
+        XCTAssertNotNil(fr)
+        let en = Locale(identifier: "en_US").memoz[parseNumber: "1,234.9870"]
+        XCTAssertNotNil(en)
 
+        XCTAssertEqual(fr, en)
+    }
+
+}
+
+extension Locale {
+    subscript(parseNumber numericString: String) -> NSNumber? {
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .decimal
+        fmt.isLenient = false
+        fmt.locale = self
+        return fmt.number(from: numericString)
+    }
 }
 
 extension MemoizationCache {
