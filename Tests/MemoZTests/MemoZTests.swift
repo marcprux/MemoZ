@@ -9,7 +9,7 @@ extension Sequence where Element : Numeric {
     var sum: Element { self.reduce(0, +) }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Sequence where Element : Numeric, Self : Hashable {
     /// The (memoized) sum of all the elements.
     /// - Complexity: Initial: O(N) MemoiZed: O(1)
@@ -39,7 +39,7 @@ private extension XCTestCase {
 }
 
 // Measure the performance of non-memoized & memoized `sum`
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 class MemoZDemo: XCTestCase {
     /// A sequence of integers ranging from -1M through +1M
     let millions = (-1_000_000...1_000_000)
@@ -66,7 +66,7 @@ extension Sequence where Element : Numeric {
     var product: Element { reduce(1, *) }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension MemoZDemo {
     /// A bunch of random numbers from the given offset
     func rangeLimts(count: Int = 20, offset: Int = 1_000_000) -> [Int] {
@@ -108,7 +108,7 @@ extension String {
     var withRandomUUIDSuffix: String { self + UUID().uuidString }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 final class MemoZTests: XCTestCase {
     /// This is an example of mis-use of the cache by caching a non-referrentially-transparent keypath function
     func testMisuse() {
@@ -302,7 +302,7 @@ final class MemoZTests: XCTestCase {
     }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 final class CacheTests: XCTestCase {
     func testCacheAPI() {
         let cache = Cache<Int, String>()
@@ -365,14 +365,14 @@ extension Locale {
     }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension MemoizationCache {
     /// A domain-specific cache
     static let domainCache = MemoizationCache()
 }
 
 #if !os(Linux) && !os(Windows)
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Encodable {
     /// A JSON blob with the given parameters.
     ///
@@ -418,7 +418,7 @@ extension Sequence {
     }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Array where Element: Collection & Hashable {
     /// "C", "BB", "AAA"
     var sortedByCountZ: [Element] {
@@ -426,7 +426,7 @@ extension Array where Element: Collection & Hashable {
     }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Array where Element: Comparable & Hashable {
     /// "AAA", "BB", "C"
     var sortedBySelfZ: [Element] {
@@ -434,7 +434,7 @@ extension Array where Element: Comparable & Hashable {
     }
 }
 
-@available(OSX 10.12, iOS 13, tvOS 9, watchOS 2, *)
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension MemoZTests {
     func testMemoKeyedSubscript() {
         let strs = ["AAA", "C", "BB"]
