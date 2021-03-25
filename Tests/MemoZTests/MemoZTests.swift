@@ -229,7 +229,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-    #if !os(Linux)
+    #if !os(Linux) && !os(Windows)
     func testJSONFormatted() {
         do {
             let xyz = ["x": "A", "y": "B", "z": "C"]
@@ -265,7 +265,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-    #if !os(Linux)
+    #if !os(Linux) && !os(Windows)
     func testCacheThreading() {
         // make a big map with some duplicated UUIDs
         var uuids = (1...10).map({ _ in [[UUID()]] })
@@ -363,7 +363,7 @@ extension MemoizationCache {
     static let domainCache = MemoizationCache()
 }
 
-#if !os(Linux)
+#if !os(Linux) && !os(Windows)
 extension Encodable {
     /// A JSON blob with the given parameters.
     ///
