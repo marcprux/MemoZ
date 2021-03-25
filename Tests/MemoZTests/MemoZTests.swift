@@ -1,4 +1,6 @@
 
+#if !os(watchOS) // XCTest not supported
+
 import XCTest
 import Dispatch
 import MemoZ
@@ -431,3 +433,4 @@ extension MemoZTests {
     }
 }
 
+#endif // !os(watchOS)
