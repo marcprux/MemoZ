@@ -33,7 +33,7 @@ jobs:
               -scheme "MemoZ" \
               -sdk "watchsimulator7.2" \
               -destination "OS=7.2,name=Apple Watch Series 6 - 44mm" \
-              ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO
+              ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   iOS:
     runs-on: macos-latest
@@ -46,7 +46,7 @@ jobs:
               -scheme "MemoZ" \
               -sdk "iphonesimulator14.4" \
               -destination "OS=14.4,name=iPhone 12 Mini" \
-              ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO
+              ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   tvOS:
     runs-on: macos-latest
@@ -59,7 +59,7 @@ jobs:
               -scheme "MemoZ" \
               -sdk "appletvsimulator14.3" \
               -destination "OS=14.3,name=Apple TV" \
-              ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO
+              ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   macOS10:
     runs-on: macos-10.15
