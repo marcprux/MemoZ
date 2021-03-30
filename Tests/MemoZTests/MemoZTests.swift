@@ -436,8 +436,8 @@ extension MemoZTests {
 #endif // !os(watchOS)
 
 
+@available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension MemoZTests {
-    @available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
     func testFibZ() {
         XCTAssertEqual(55, 10.fib)
         XCTAssertEqual(55, 10.fibZ)
