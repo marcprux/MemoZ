@@ -22,7 +22,10 @@ private extension XCTestCase {
         #if !canImport(ObjeciveC)
         // unfortunately the Swift re-implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
         // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation between the initial run and subsequent runs.
-        block() // just run by itself once as a "warm-up"
+        // just run a couple of times to "warm-up"
+        print("non-objc: warming up to keep measures constant")
+        block()
+        block()
         #endif
 
         measure {
