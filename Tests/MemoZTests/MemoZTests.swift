@@ -433,5 +433,29 @@ extension MemoZTests {
         XCTAssertEqual(strs.sortedByCountZ, ["C", "BB", "AAA"])
     }
 }
-
 #endif // !os(watchOS)
+
+
+extension MemoZTests {
+    func testFibZ() {
+        XCTAssertEqual(55, 10.fib)
+        XCTAssertEqual(55, 10.fibZ)
+        for i in 1...60 {
+            print("fibZ", i, ":", i.fibZ)
+        }
+    }
+}
+
+extension Int {
+    /// Returns the `this`th term in the Fibonacci sequence
+    var fib: Int {
+        self < 2 ? self : ((self-1).fib + (self-2).fib)
+    }
+}
+
+extension Int {
+    /// Returns the `this`th term in the Fibonacci sequence (memozied)
+    var fibZ: Int {
+        self < 2 ? self : ((self-1).memoz.fibZ + (self-2).memoz.fibZ)
+    }
+}
