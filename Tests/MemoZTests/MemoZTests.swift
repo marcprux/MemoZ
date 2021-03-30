@@ -19,22 +19,15 @@ extension Sequence where Element : Numeric, Self : Hashable {
 private extension XCTestCase {
     /// Perform `XCTestCase.measure` for cases where a high standard deviation is expected; this works around an issue on non-macOS XCTest implementations where the maximum standard distribution is hardwired at 10%.
     func measureHighStddev(block: () -> ()) {
-        #if !os(macOS)
-        // unfortunately the open implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
-        // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation; until this is fixed (or we re-implement `measure`), we need to skip some measure tests
+        #if !canImport(ObjeciveC)
+        // unfortunately the Swift re-implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
+        // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation between the initial run and subsequent runs.
+        block() // just run by itself once as a "warm-up"
+        #endif
 
-        // simply execute the block itself 10 times…
-        measureMetrics([XCTPerformanceMetric.wallClockTime], automaticallyStartMeasuring: false) {
-            // …without performing the measurements
-            startMeasuring()
-            stopMeasuring()
-            block()
-        }
-        #else
         measure {
             block()
         }
-        #endif
     }
 }
 
@@ -225,17 +218,15 @@ final class MemoZTests: XCTestCase {
     
     func testCachePartition() {
         let uuids = (0...100_000).map({ _ in UUID() })
-#if !os(Windows) // works, but “failed: The relative standard deviation of the measurements is 29.580% which is higher than the max allowed of 10.000%”
-        measure {
+        measureHighStddev {
             // the following two calls are the same, except the second one uses a partitioned cache
             XCTAssertEqual(3800038, uuids.memoz.description.count)
             XCTAssertEqual(3800038, uuids.memoize(with: .domainCache, \.description).count)
             XCTAssertEqual(3800038, uuids[memoz: .domainCache].description.count)
         }
-#endif
     }
 
-    #if !os(Linux) && !os(Windows)
+    #if canImport(ObjeciveC)
     func testJSONFormatted() {
         do {
             let xyz = ["x": "A", "y": "B", "z": "C"]
@@ -271,7 +262,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-    #if !os(Linux) && !os(Windows)
+    #if canImport(ObjeciveC)
     func testCacheThreading() {
         // make a big map with some duplicated UUIDs
         var uuids = (1...10).map({ _ in [[UUID()]] })
@@ -371,7 +362,7 @@ extension MemoizationCache {
     static let domainCache = MemoizationCache()
 }
 
-#if !os(Linux) && !os(Windows)
+#if canImport(ObjeciveC)
 @available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Encodable {
     /// A JSON blob with the given parameters.
