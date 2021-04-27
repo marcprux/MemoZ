@@ -42,7 +42,7 @@ class MemoZDemo: XCTestCase {
 
     func testCalculatedSum() {
         // average: 1.299, relative standard deviation: 0.509%, values: [1.312717, 1.296008, 1.306766, 1.298375, 1.299257, 1.303043, 1.296738, 1.294311, 1.288839, 1.293301]
-        measure { XCTAssertEqual(millions.sum, 0) }
+        measureHighStddev { XCTAssertEqual(millions.sum, 0) }
     }
 
     func testMemoizedSum() {
