@@ -3,6 +3,7 @@
 [![Build Status](https://github.com/marcprux/MemoZ/workflows/MemoZ%20CI/badge.svg?branch=master)](https://github.com/marcprux/MemoZ/actions)
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/marcprux/MemoZ)
+[![](https://tokei.rs/b1/github/marcprux/MemoZ)](https://github.com/marcprux/MemoZ)
 
 MemoZ is a cross-platform (Apple + Linux + Windows) Swift microframework for [zero-line](#zero-line) caching of computed properties on pure value types.
 
