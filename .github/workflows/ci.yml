@@ -19,7 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: swift test --enable-test-discovery
+      - name: Test (Debug)
+        run: swift test -v --configuration debug
+      - name: Test (Release)
+        run: swift test -v --configuration release -Xswiftc -enable-testing
 
   watchOS:
     if: false # disabled until we can work around missing XCTest in non-xcodeproj SPM module
@@ -74,8 +77,10 @@ jobs:
     needs: [Linux] # Linux must pass first
     steps:
       - uses: actions/checkout@v2
-      - name: Run tests
-        run: swift test
+      - name: Test (Debug)
+        run: swift test -v --configuration debug
+      - name: Test (Release)
+        run: swift test -v --configuration release -Xswiftc -enable-testing
 
   macOS11:
     if: false # macos-11.0 not yet public
@@ -83,8 +88,10 @@ jobs:
     needs: [macOS10] # macOS10 must pass first
     steps:
       - uses: actions/checkout@v2
-      - name: Run tests
-        run: swift test
+      - name: Test (Debug)
+        run: swift test -v --configuration debug
+      - name: Test (Release)
+        run: swift test -v --configuration release -Xswiftc -enable-testing
 
   Windows10:
     runs-on: windows-latest
@@ -119,9 +126,9 @@ jobs:
       - name: Build (Release)
         run: swift build -v -c release
       - name: Test (Debug)
-        run: swift test -v --configuration debug --enable-test-discovery
+        run: swift test -v --configuration debug
       - name: Test (Release)
-        run: swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery
+        run: swift test -v --configuration release -Xswiftc -enable-testing
 
   Release:
     runs-on: ubuntu-latest
