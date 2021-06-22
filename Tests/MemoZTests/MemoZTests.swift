@@ -24,7 +24,7 @@ private extension XCTestCase {
         // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation between the initial run and subsequent runs.
         print("non-objc: warming up to keep measures constant")
         // so we first "warm-up"
-        for _ in 1...3 {
+        for _ in 1...5 {
             block()
         }
         #endif
