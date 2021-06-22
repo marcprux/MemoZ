@@ -56,7 +56,7 @@ jobs:
             xcodebuild clean test \
               -scheme "MemoZ" \
               -sdk "iphonesimulator14.4" \
-              -destination "OS=14.4,name=iPhone 12 Mini" \
+              -destination "OS=14.4,name=iPod Touch (7th generation)" \
               ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   tvOS:
