@@ -28,8 +28,9 @@ jobs:
     if: false # disabled until we can work around missing XCTest in non-xcodeproj SPM module
     runs-on: macos-latest
     needs: [Linux] # Linux must pass first
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #env:
+      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #-disablePackageRepositoryCache \
 
     steps:
       - uses: actions/checkout@v2
@@ -43,7 +44,6 @@ jobs:
       # “XCTest is not available when building for watchOS Simulator”
       - run: |
             xcodebuild clean build \
-              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MemoZ" \
               -sdk "watchsimulator" \
@@ -53,14 +53,14 @@ jobs:
   iOS:
     runs-on: macos-latest
     needs: [Linux] # watchOS must pass first
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #env:
+      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #-disablePackageRepositoryCache \
 
     steps:
       - uses: actions/checkout@v2
       - run: |
             xcodebuild clean test \
-              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MemoZ" \
               -sdk "iphonesimulator" \
@@ -70,14 +70,14 @@ jobs:
   tvOS:
     runs-on: macos-latest
     needs: [iOS] # iOS must pass first
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #env:
+      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      #-disablePackageRepositoryCache \
 
     steps:
       - uses: actions/checkout@v2
       - run: |
             xcodebuild clean test \
-              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MemoZ" \
               -sdk "appletvsimulator" \
