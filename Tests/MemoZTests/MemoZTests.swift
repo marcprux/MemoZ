@@ -1,4 +1,3 @@
-#if !os(watchOS) // no testing on watchOS
 import XCTest
 import Dispatch
 import MemoZ
@@ -19,7 +18,7 @@ extension Sequence where Element : Numeric, Self : Hashable {
 private extension XCTestCase {
     /// Perform `XCTestCase.measure` for cases where a high standard deviation is expected; this works around an issue on non-macOS XCTest implementations where the maximum standard distribution is hardwired at 10%.
     func measureHighStddev(block: () -> ()) {
-        #if !canImport(ObjeciveC)
+        #if !canImport(ObjectiveC)
         // unfortunately the Swift re-implementation of XCTest.measure hardwires the maximum permitted standard deviation to 10% (https://github.com/apple/swift-corelibs-xctest/blob/main/Sources/XCTest/Private/WallClockTimeMetric.swift#L33)
         // this undermines our tests that are designed to show that caching is working by showing a very high standard deviation between the initial run and subsequent runs.
         print("non-objc: warming up to keep measures constant")
@@ -230,7 +229,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-    #if canImport(ObjeciveC)
+    #if canImport(ObjectiveC)
     func testJSONFormatted() {
         do {
             let xyz = ["x": "A", "y": "B", "z": "C"]
@@ -266,7 +265,7 @@ final class MemoZTests: XCTestCase {
         }
     }
 
-    #if canImport(ObjeciveC)
+    #if canImport(ObjectiveC)
     func testCacheThreading() {
         // make a big map with some duplicated UUIDs
         var uuids = (1...10).map({ _ in [[UUID()]] })
@@ -366,7 +365,7 @@ extension MemoizationCache {
     static let domainCache = MemoizationCache()
 }
 
-#if canImport(ObjeciveC)
+#if canImport(ObjectiveC)
 @available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)
 extension Encodable {
     /// A JSON blob with the given parameters.
@@ -437,7 +436,6 @@ extension MemoZTests {
         XCTAssertEqual(strs.sortedByCountZ, ["C", "BB", "AAA"])
     }
 }
-#endif // !os(watchOS)
 
 
 @available(OSX 10.12, iOS 13, tvOS 13, watchOS 2, *)

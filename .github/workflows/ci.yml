@@ -27,22 +27,14 @@ jobs:
   watchOS:
     runs-on: macos-11
     needs: [Linux] # Linux must pass first
-      #env:
-      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
-      #-disablePackageRepositoryCache \
+      env:
+        DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
 
     steps:
       - uses: actions/checkout@v2
 
-      # Install Xcode 12.5 w/ Swift 5.4 for watchOS XCTest support
-      - uses: maxim-lobanov/setup-xcode@v1.2.3
-        with:
-          xcode-version: "latest-stable"
-
-      # note that we just build rather than test because:
-      # “XCTest is not available when building for watchOS Simulator”
       - run: |
-            xcodebuild clean build \
+            xcodebuild clean test \
               -configuration Release \
               -scheme "MemoZ" \
               -sdk "watchsimulator" \
