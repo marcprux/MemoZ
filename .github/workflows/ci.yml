@@ -86,7 +86,7 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   macOS11:
-    runs-on: macos-11.0
+    runs-on: macos-11
     needs: [macOS10] # macOS10 must pass first
     steps:
       - uses: actions/checkout@v2
