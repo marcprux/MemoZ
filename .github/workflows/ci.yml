@@ -124,13 +124,14 @@ jobs:
       - name: Swift Version
         run: swift --version
       - name: Build (Debug)
-        run: swift build -v -c debug
+        # https://github.com/compnerd/swift-win32/issues/327
+        run: swift build -v -c debug || swift build -v -c debug
       - name: Build (Release)
-        run: swift build -v -c release
+        run: swift build -v -c release || swift build -v -c release
       - name: Test (Debug)
-        run: swift test -v --configuration debug --enable-test-discovery
+        run: swift test -v --configuration debug --enable-test-discovery || swift test -v --configuration debug --enable-test-discovery
       - name: Test (Release)
-        run: swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery
+        run: swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery || swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery
 
   Release:
     runs-on: ubuntu-latest
