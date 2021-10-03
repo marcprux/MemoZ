@@ -273,7 +273,7 @@ public final class Cache<Key : Hashable, Value> {
     }
 
     @inlinable override func isEqual(_ object: Any?) -> Bool {
-        return (object as? Self<T>)?.val == self.val
+        return (object as? Self)?.val == self.val
     }
 
     @inlinable static func ==(lhs: KeyRef, rhs: KeyRef) -> Bool {
