@@ -230,24 +230,20 @@ final class MemoZTests: XCTestCase {
     }
 
     #if canImport(ObjectiveC)
-    func testJSONFormatted() {
-        do {
-            let xyz = ["x": "A", "y": "B", "z": "C"]
-            let data = try xyz[JSONFormatted: false, sorted: true].get()
-            XCTAssertEqual(String(data: data, encoding: .utf8), "{\"x\":\"A\",\"y\":\"B\",\"z\":\"C\"}")
+    func testJSONFormatted() throws {
+        let xyz = ["x": "A", "y": "B", "z": "C"]
+        let data = try xyz[JSONFormatted: false, sorted: true].get()
+        XCTAssertEqual(String(data: data, encoding: .utf8), #"{"x":"A","y":"B","z":"C"}"#)
 
-            let _ = try xyz.memoz[JSONFormatted: false, sorted: nil].get()
-            let _ = try xyz.memoz[JSONFormatted: true, sorted: false].get()
-            let _ = try xyz.memoz[JSONFormatted: true, sorted: true].get()
+        let _ = try xyz.memoz[JSONFormatted: false, sorted: nil].get()
+        let _ = try xyz.memoz[JSONFormatted: true, sorted: false].get()
+        let _ = try xyz.memoz[JSONFormatted: true, sorted: true].get()
 
-            // ensure that keypath parameters are used in in the cached values
-            XCTAssertEqual(try xyz.memoz[JSONFormatted: true, sorted: true].get(), try xyz.memoz[JSONFormatted: true, sorted: true].get())
-            XCTAssertEqual(try xyz.memoz[JSONFormatted: false, sorted: false].get(), try xyz.memoz[JSONFormatted: false, sorted: false].get())
+        // ensure that keypath parameters are used in in the cached values
+        XCTAssertEqual(try xyz.memoz[JSONFormatted: true, sorted: true].get(), try xyz.memoz[JSONFormatted: true, sorted: true].get())
+        XCTAssertEqual(try xyz.memoz[JSONFormatted: false, sorted: false].get(), try xyz.memoz[JSONFormatted: false, sorted: false].get())
 
-            XCTAssertNotEqual(try xyz.memoz[JSONFormatted: true, sorted: true].get(), try xyz.memoz[JSONFormatted: false, sorted: false].get(), "cache clash")
-        } catch {
-            XCTFail("\(error)")
-        }
+        XCTAssertNotEqual(try xyz.memoz[JSONFormatted: true, sorted: true].get(), try xyz.memoz[JSONFormatted: false, sorted: false].get(), "cache clash")
     }
     #endif
 

@@ -8,6 +8,9 @@
 
 import Foundation
 
+XXX
+
+
 extension Hashable {
     /// Memoize the result of the execution of a predicate for the `Hashable` receiver.
     ///
