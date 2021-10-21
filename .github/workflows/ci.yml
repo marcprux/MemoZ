@@ -27,9 +27,6 @@ jobs:
   watchOS:
     runs-on: macos-11
     needs: [Linux] # Linux must pass first
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
-
     steps:
       - uses: actions/checkout@v2
 
@@ -44,10 +41,6 @@ jobs:
   iOS:
     runs-on: macos-latest
     needs: [watchOS] 
-      #env:
-      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
-      #-disablePackageRepositoryCache \
-
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -61,10 +54,6 @@ jobs:
   tvOS:
     runs-on: macos-latest
     needs: [iOS] # iOS must pass first
-      #env:
-      #DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
-      #-disablePackageRepositoryCache \
-
     steps:
       - uses: actions/checkout@v2
       - run: |
