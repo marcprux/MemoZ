@@ -84,6 +84,16 @@ jobs:
       - name: Test (Release)
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
+  macOS12:
+    runs-on: macos-12
+    needs: [macOS11] # macOS11 must pass first
+    steps:
+      - uses: actions/checkout@v2
+      - name: Test (Debug)
+        run: swift test -v --configuration debug
+      - name: Test (Release)
+        run: swift test -v --configuration release -Xswiftc -enable-testing
+
   Windows10:
     runs-on: windows-latest
     needs: [Linux] # Linux must pass first
