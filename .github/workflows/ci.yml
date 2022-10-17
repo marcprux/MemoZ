@@ -22,6 +22,8 @@ jobs:
       - name: Install create-api
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew config
+          brew doctor
           brew install -v --head create-api
       - name: Test (Debug)
         run: swift test -v --configuration debug
