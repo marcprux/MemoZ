@@ -19,11 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install swiftlint
+      - name: Install create-api
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install swiftlint
-          swiftlint
+          brew install -v --head create-api
       - name: Test (Debug)
         run: swift test -v --configuration debug
       - name: Test (Release)
