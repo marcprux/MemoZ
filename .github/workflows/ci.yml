@@ -25,6 +25,7 @@ jobs:
           brew update
           brew config
           #brew doctor
+          brew install swift
           brew install -v --head create-api
       - name: Test (Debug)
         run: swift test -v --configuration debug
