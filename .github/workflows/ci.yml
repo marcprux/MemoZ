@@ -97,33 +97,6 @@ jobs:
     runs-on: ubuntu-22.04
     #needs: [Linux]
     steps:
-      # Running tests on macOS would be much faster
-      # due to HAXM support the GitHub runners; no acceleration on Linux
-      # https://github.com/ReactiveCircus/android-emulator-runner/issues/46
-      # but since out Swift-Android toolchain only works on linux so far,
-      # it is easier to run the tests on a single platform rather than
-      # perform a complex handoff of the artifacts from the ubuntu build
-      # host and the macOS Android test runner.
-      - name: Test Android Emulator
-        timeout-minutes: 30
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 24
-          arch: x86_64
-          script: |
-            ls -la
-            uname -a
-            adb install pack/termux-debug.apk
-            chmod 755 pack/{generate-manual,math,repeat,roll,*.xctest}
-            adb push pack /data/local/tmp
-            adb shell /data/local/tmp/pack/swift-argument-parserPackageTests.xctest
-            adb shell /data/local/tmp/pack/swift-cryptoPackageTests.xctest
-            adb shell "run-as com.termux mkdir /data/data/com.termux/pack"
-            adb shell "run-as com.termux cp /data/local/tmp/pack/swift-nioPackageTests.xctest /data/data/com.termux/pack"
-            adb shell "run-as com.termux cp -r /data/local/tmp/pack/lib /data/data/com.termux/pack"
-            adb shell "run-as com.termux /data/data/com.termux/pack/swift-nioPackageTests.xctest"
-            adb shell /data/local/tmp/pack/swift-algorithmsPackageTests.xctest
-
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
         run: |
@@ -200,6 +173,37 @@ jobs:
         with:
           name: emulator_tests
           path: ./lib/build/outputs/code_coverage/debugAndroidTest/connected
+
+      # Running tests is not yet working
+      #
+      # Running tests on macOS would be much faster
+      # due to HAXM support the GitHub runners; no acceleration on Linux
+      # https://github.com/ReactiveCircus/android-emulator-runner/issues/46
+      # but since out Swift-Android toolchain only works on linux so far,
+      # it is easier to run the tests on a single platform rather than
+      # perform a complex handoff of the artifacts from the ubuntu build
+      # host and the macOS Android test runner.
+      - name: Test Android Emulator
+        if: false
+        timeout-minutes: 30
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 24
+          arch: x86_64
+          script: |
+            ls -la
+            uname -a
+            adb install pack/termux-debug.apk
+            chmod 755 pack/{generate-manual,math,repeat,roll,*.xctest}
+            adb push pack /data/local/tmp
+            adb shell /data/local/tmp/pack/swift-argument-parserPackageTests.xctest
+            adb shell /data/local/tmp/pack/swift-cryptoPackageTests.xctest
+            adb shell "run-as com.termux mkdir /data/data/com.termux/pack"
+            adb shell "run-as com.termux cp /data/local/tmp/pack/swift-nioPackageTests.xctest /data/data/com.termux/pack"
+            adb shell "run-as com.termux cp -r /data/local/tmp/pack/lib /data/data/com.termux/pack"
+            adb shell "run-as com.termux /data/data/com.termux/pack/swift-nioPackageTests.xctest"
+            adb shell /data/local/tmp/pack/swift-algorithmsPackageTests.xctest
+
 
   Release:
     runs-on: ubuntu-latest
