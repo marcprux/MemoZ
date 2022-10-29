@@ -143,12 +143,23 @@ jobs:
           #cat android-aarch64.json
           cat android-aarch64.json | jq .
 
-
-      - name: Setup Android Toolchain
+      - name: Build Android (Debug)
         run: |
           SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
 
-          "${SWIFT}" build --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+          "${SWIFT}" build --configuration debug --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+
+          file .build/*/debug/*.o
+
+          # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
+
+      - name: Build Android (Release)
+        run: |
+          SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
+
+          "${SWIFT}" build --configuration release --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+
+          file .build/*/release/*.o
 
           # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
 
