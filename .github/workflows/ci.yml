@@ -156,7 +156,7 @@ jobs:
           NDK_BASENAME=$(basename "${NDK_URL}")
           NDK_DIR=$(basename "${NDK_BASENAME}" "-linux.zip")
           test -f "${NDK_BASENAME}" || curl -O -fsSL "${NDK_URL}"
-test -d "${NDK_DIR}" || unzip -q "${NDK_BASENAME}"
+          test -d "${NDK_DIR}" || unzip -q "${NDK_BASENAME}"
 
           ln -sf ../../../../swift-5.7-RELEASE-ubuntu22.04/usr/lib/clang/13.0.0 swift-5.7-android-aarch64-24-sdk/usr/lib/swift/clang
           SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
