@@ -161,7 +161,9 @@ jobs:
           ln -sf ../../../../swift-5.7-RELEASE-ubuntu22.04/usr/lib/clang/13.0.0 swift-5.7-android-aarch64-24-sdk/usr/lib/swift/clang
           SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
 
-          "${SWIFT}" build --build-tests --enable-test-discovery --destination ~/github/marcprux/swift-android-sdk/android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+          echo '{ "version": 1, "target": "aarch64-unknown-linux-android24", "toolchain-bin-dir": "'${PWD}'"/swift-5.7-RELEASE-ubuntu20.04/usr/bin", "sdk": "'${PWD}'"/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/sysroot", "extra-cc-flags": [ "-fPIC" ], "extra-swiftc-flags": [ "-resource-dir", "'${PWD}'"/swift-5.7-android-aarch64-24-sdk/usr/lib/swift", "-tools-directory", "'${PWD}'"/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin" ], "extra-cpp-flags": [ "-lstdc++" ] }' > android-aarch64.json
+
+          "${SWIFT}" build --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
 
           # TODO: testing currently requires macOS
           # see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
