@@ -109,12 +109,20 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 24
-          profile: "Galaxy Nexus"
-          emulator-options: -no-snapshot -no-window -no-boot-anim -camera-back none -camera-front none -gpu swiftshader_indirect
-          #script: ./gradlew connectedCheck
+          arch: x86_64
           script: |
             ls -la
             uname -a
+            adb install pack/termux-debug.apk
+            chmod 755 pack/{generate-manual,math,repeat,roll,*.xctest}
+            adb push pack /data/local/tmp
+            adb shell /data/local/tmp/pack/swift-argument-parserPackageTests.xctest
+            adb shell /data/local/tmp/pack/swift-cryptoPackageTests.xctest
+            adb shell "run-as com.termux mkdir /data/data/com.termux/pack"
+            adb shell "run-as com.termux cp /data/local/tmp/pack/swift-nioPackageTests.xctest /data/data/com.termux/pack"
+            adb shell "run-as com.termux cp -r /data/local/tmp/pack/lib /data/data/com.termux/pack"
+            adb shell "run-as com.termux /data/data/com.termux/pack/swift-nioPackageTests.xctest"
+            adb shell /data/local/tmp/pack/swift-algorithmsPackageTests.xctest
 
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
