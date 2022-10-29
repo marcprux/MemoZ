@@ -149,7 +149,7 @@ jobs:
 
           "${SWIFT}" build --configuration debug --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
 
-          file .build/*/debug/*.o
+          file .build/debug/*/*.o
 
           # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
 
@@ -159,7 +159,7 @@ jobs:
 
           "${SWIFT}" build --configuration release --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
 
-          file .build/*/release/*.o
+          file .build/release/*/*.o
 
           # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
 
