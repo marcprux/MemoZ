@@ -19,15 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install create-api
-        run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew update
-          brew config
-          #brew doctor
-          brew install swift
-          #brew install -v --head create-api
-          swift --version
       - name: Test (Debug)
         run: swift test -v --configuration debug
       - name: Test (Release)
@@ -123,6 +114,15 @@ jobs:
         run: swift test -v --configuration debug --enable-test-discovery || swift test -v --configuration debug --enable-test-discovery
       - name: Test (Release)
         run: swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery || swift test -v --configuration release -Xswiftc -enable-testing --enable-test-discovery
+
+  Android:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Test (Debug)
+        run: swift test -v --configuration debug
+      - name: Test (Release)
+        run: swift test -v --configuration release -Xswiftc -enable-testing
 
   Release:
     runs-on: ubuntu-latest
