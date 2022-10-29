@@ -15,6 +15,7 @@ on:
 jobs:
   Linux:
     runs-on: ubuntu-latest
+    needs: [Android]
     steps:
       - uses: actions/checkout@v2
       - name: Test (Debug)
@@ -94,8 +95,17 @@ jobs:
 
   Android:
     runs-on: ubuntu-22.04
-    needs: [Linux]
+    #needs: [Linux]
     steps:
+      - name: Test Android Emulator
+        timeout-minutes: 30
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 24
+          profile: profile: Galaxy Nexus
+          emulator-options: -no-snapshot -no-window -no-boot-anim -camera-back none -camera-front none -gpu swiftshader_indirect
+          script: ./gradlew connectedCheck
+
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
         run: |
@@ -161,7 +171,17 @@ jobs:
 
           file .build/release/*/*.o
 
-          # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
+      - uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: temurin
+          cache: gradle
+
+      - name: Upload emulator tests artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: emulator_tests
+          path: ./lib/build/outputs/code_coverage/debugAndroidTest/connected
 
   Release:
     runs-on: ubuntu-latest
