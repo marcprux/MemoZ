@@ -97,6 +97,13 @@ jobs:
     runs-on: ubuntu-22.04
     #needs: [Linux]
     steps:
+      # Running tests on macOS would be much faster
+      # due to HAXM support the GitHub runners; no acceleration on Linux
+      # https://github.com/ReactiveCircus/android-emulator-runner/issues/46
+      # but since out Swift-Android toolchain only works on linux so far,
+      # it is easier to run the tests on a single platform rather than
+      # perform a complex handoff of the artifacts from the ubuntu build
+      # host and the macOS Android test runner.
       - name: Test Android Emulator
         timeout-minutes: 30
         uses: reactivecircus/android-emulator-runner@v2
@@ -104,7 +111,10 @@ jobs:
           api-level: 24
           profile: "Galaxy Nexus"
           emulator-options: -no-snapshot -no-window -no-boot-anim -camera-back none -camera-front none -gpu swiftshader_indirect
-          script: ./gradlew connectedCheck
+          #script: ./gradlew connectedCheck
+          script: |
+            ls -la
+            uname -a
 
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
