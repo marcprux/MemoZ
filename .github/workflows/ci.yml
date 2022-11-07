@@ -86,7 +86,63 @@ jobs:
       - name: Test (Release)
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
-  Android:
+  Android-macOS:
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Android Toolchain
+        run: |
+          #TOOLCHAIN_URL="https://github.com/buttaface/swift-android-sdk/releases/download/5.7/swift-5.7-android-aarch64-24-sdk.tar.xz"
+          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/suites/9164178983/artifacts/427027100"
+          SWIFT_DIR="swift-android-toolchain"
+          curl -fsSL -o "${SWIFT_DIR}.tar.gz" "${TOOLCHAIN_URL}"
+          tar xvzf "${SWIFT_DIR}.tar.gz"
+          mv archive "${SWIFT_DIR}"
+          du -skh "${SWIFT_DIR}"
+
+          SWIFT_PATH="${PWD}/${SWIFT_DIR}"
+
+          #ls "${SWIFT_PATH}"
+          ${SWIFT_PATH}/usr/bin/swift --version
+
+          export PATH="${SWIFT_PATH}/usr/bin:${PATH}"
+          swift --version
+
+          TOOLCHAIN_BASENAME=$(basename "${TOOLCHAIN_URL}")
+          TOOLCHAIN_DIR=$(basename "${TOOLCHAIN_BASENAME}" ".tar.xz")
+          test -f "${TOOLCHAIN_BASENAME}" || curl -O -fsSL "${TOOLCHAIN_URL}"
+          test -d "${TOOLCHAIN_DIR}" || tar xf "${TOOLCHAIN_BASENAME}"
+
+          NDK_BASENAME=$(basename "${NDK_URL}")
+          NDK_DIR=$(basename "${NDK_BASENAME}" "-linux.zip")
+          test -f "${NDK_BASENAME}" || curl -O -fsSL "${NDK_URL}"
+          test -d "${NDK_DIR}" || unzip -q "${NDK_BASENAME}"
+
+          ln -sf ../../../../swift-5.7-RELEASE-ubuntu22.04/usr/lib/clang/13.0.0 swift-5.7-android-aarch64-24-sdk/usr/lib/swift/clang
+
+          echo '{ "version": 1, "target": "aarch64-unknown-linux-android24", "toolchain-bin-dir": "'${PWD}'/swift-5.7-RELEASE-ubuntu20.04/usr/bin", "sdk": "'${PWD}'/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/sysroot", "extra-cc-flags": [ "-fPIC" ], "extra-swiftc-flags": [ "-resource-dir", "'${PWD}'/swift-5.7-android-aarch64-24-sdk/usr/lib/swift", "-tools-directory", "'${PWD}'/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin" ], "extra-cpp-flags": [ "-lstdc++" ] }' > android-aarch64.json
+
+          #cat android-aarch64.json
+          cat android-aarch64.json | jq .
+
+      - name: Build Android (Debug)
+        run: |
+          SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
+
+          "${SWIFT}" build --configuration debug --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+
+          file .build/debug/*/*.o
+
+          # testing currently requires macOS; see: https://github.com/buttaface/swift-android-sdk/blob/5.7/README.md#swift-cross-compilation-sdks-for-android
+
+      - name: Build Android (Release)
+        run: |
+          SWIFT="${PWD}/swift-5.7-RELEASE-ubuntu22.04/usr/bin/swift"
+
+          "${SWIFT}" build --configuration release --build-tests --enable-test-discovery --destination android-aarch64.json -Xlinker -rpath -Xlinker \$ORIGIN/swift-5.7-android-aarch64-24-sdk/usr/lib/swift/android
+
+
+  Android-linux:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
