@@ -14,6 +14,7 @@ on:
 
 jobs:
   Linux:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,6 +24,7 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   watchOS:
+    if: false
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
@@ -36,6 +38,7 @@ jobs:
               ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   iOS:
+    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -48,6 +51,7 @@ jobs:
               ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   tvOS:
+    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -60,6 +64,7 @@ jobs:
               ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO
 
   macOS10:
+    if: false
     runs-on: macos-10.15
     steps:
       - uses: actions/checkout@v2
@@ -69,6 +74,7 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   macOS11:
+    if: false
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
@@ -78,6 +84,7 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   macOS12:
+    if: false
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v2
@@ -87,13 +94,12 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   Android-macOS:
-    runs-on: macos-12
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
         run: |
-          #TOOLCHAIN_URL="https://github.com/buttaface/swift-android-sdk/releases/download/5.7/swift-5.7-android-aarch64-24-sdk.tar.xz"
-          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/suites/9164178983/artifacts/427027100"
+          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.2-android-ndk-r21e/swift-5.5.2-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
           SWIFT_DIR="swift-android-toolchain"
           curl -fsSL -o "${SWIFT_DIR}.tar.gz" "${TOOLCHAIN_URL}"
           tar xvzf "${SWIFT_DIR}.tar.gz"
