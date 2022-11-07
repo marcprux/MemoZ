@@ -103,7 +103,6 @@ jobs:
           SWIFT_DIR="swift-android-toolchain"
           curl -fsSL -o "${SWIFT_DIR}.tar.gz" "${TOOLCHAIN_URL}"
           tar xvzf "${SWIFT_DIR}.tar.gz"
-          mv archive "${SWIFT_DIR}"
           du -skh "${SWIFT_DIR}"
 
           SWIFT_PATH="${PWD}/${SWIFT_DIR}"
@@ -113,6 +112,7 @@ jobs:
 
           export PATH="${SWIFT_PATH}/usr/bin:${PATH}"
           swift --version
+          echo '1+2' | swift repl
 
           TOOLCHAIN_BASENAME=$(basename "${TOOLCHAIN_URL}")
           TOOLCHAIN_DIR=$(basename "${TOOLCHAIN_BASENAME}" ".tar.xz")
