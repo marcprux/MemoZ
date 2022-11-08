@@ -114,7 +114,7 @@ jobs:
 
           export PATH="${SWIFT_PATH}/usr/bin:${PATH}"
           swift --version
-          echo '1+2' | swift repl
+          # echo '1+2' | swift repl
 
           swift test -v --configuration debug
 
