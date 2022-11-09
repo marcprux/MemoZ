@@ -101,8 +101,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Setup Android Toolchain
         run: |
-          #TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.2-android-ndk-r21e/swift-5.5.2-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
-          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.3-android-ndk-r21e/swift-5.5.3-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
+          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.2-android-ndk-r21e/swift-5.5.2-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
+          #TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.3-android-ndk-r21e/swift-5.5.3-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
 
           SWIFT_DIR="swift-android-toolchain"
           curl -fsSL -o "${SWIFT_DIR}.tar.gz" "${TOOLCHAIN_URL}"
@@ -114,10 +114,14 @@ jobs:
           #ls "${SWIFT_PATH}"
           ${SWIFT_PATH}/usr/bin/swift --version
 
-          export PATH="${SWIFT_PATH}/usr/bin:${PATH}"
+          echo "${SWIFT_PATH}/usr/bin" >> $GITHUB_PATH
           swift --version
+
           # echo '1+2' | swift repl
 
+      - name: Build
+        run: |
+          swift --version
           swift build
           #swift test -v --configuration debug
 
