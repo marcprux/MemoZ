@@ -125,10 +125,10 @@ jobs:
           swiftc-aarch64-linux-android --version
           swiftc-x86_64-linux-android --version
 
-          swiftc-aarch64-linux-android build
-          swiftc-x86_64-linux-android build
-          #swiftc-arm-linux-androideabi build
-          #swiftc-i686-linux-android build
+          swift-build-aarch64-linux-android
+          swift-build-x86_64-linux-android
+          #swift-build-arm-linux-androideabi
+          #swift-build-i686-linux-android
 
           ls -la .build/
 
