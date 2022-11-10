@@ -158,7 +158,7 @@ final class MemoZTests: XCTestCase {
     }
 
     func testSumUncached() {
-        measure { // average: 1.288, relative standard deviation: 1.363%
+        measureHighStddev { // average: 1.288, relative standard deviation: 1.363%
             XCTAssertEqual(0, millions.sum)
         }
     }
