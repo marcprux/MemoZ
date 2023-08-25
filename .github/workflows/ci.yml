@@ -15,11 +15,11 @@ jobs:
   Linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Env: ${env.XXX}
+      - name: Env: ${XXX}
         run: echo XXX=YYY > $GITHUB_ENV
-      - name: Env2: ${env.XXX}
+      - name: Env2: ${XXX}
         run: echo XXX=ZZZ > $GITHUB_ENV
-      - name: Env3 ${env.XXX}
+      - name: Env3 ${XXX}
         run: echo XXX=AAA > $GITHUB_ENV
 
       - uses: actions/checkout@v2
