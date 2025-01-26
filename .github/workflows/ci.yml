@@ -15,16 +15,29 @@ jobs:
   Linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Test (Debug)
         run: swift test -v --configuration debug
       - name: Test (Release)
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
+  Android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test (Debug)
+        uses: skiptools/swift-android-action@v2
+        with:
+          swift-configuration: debug
+      - name: Test (Release)
+        uses: skiptools/swift-android-action@v2
+        with:
+          swift-configuration: release
+
   watchOS:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - run: |
             xcodebuild clean test \
@@ -37,7 +50,7 @@ jobs:
   iOS:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: |
             xcodebuild clean test \
               -configuration Release \
@@ -49,7 +62,7 @@ jobs:
   tvOS:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: |
             xcodebuild clean test \
               -configuration Release \
@@ -61,46 +74,8 @@ jobs:
   macOS12:
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Test (Debug)
         run: swift test -v --configuration debug
       - name: Test (Release)
         run: swift test -v --configuration release -Xswiftc -enable-testing
-
-  Android-macOS:
-    if: false
-    runs-on: macos-12
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_13.2.1.app/Contents/Developer
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Android Toolchain
-        run: |
-          #TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.2-android-ndk-r21e/swift-5.5.2-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
-          TOOLCHAIN_URL="https://github.com/marcprux/swift-android-toolchain/releases/download/swift-5.5.3-android-ndk-r21e/swift-5.5.3-android-ndk-r21e-xcode-13.3.1-toolchain.tar.gz"
-
-          SWIFT_DIR="swift-android-toolchain"
-          curl -fsSL -o "${SWIFT_DIR}.tar.gz" "${TOOLCHAIN_URL}"
-          tar xzf "${SWIFT_DIR}.tar.gz"
-          du -skh "${SWIFT_DIR}"
-
-          SWIFT_PATH="${PWD}/${SWIFT_DIR}"
-
-          #ls "${SWIFT_PATH}"
-          ${SWIFT_PATH}/usr/bin/swift --version
-
-          echo "${SWIFT_PATH}/usr/bin" >> $GITHUB_PATH
-
-      - name: Build
-        run: |
-          swift --version
-          swiftc-aarch64-linux-android --version
-          swiftc-x86_64-linux-android --version
-
-          swift-build-aarch64-linux-android
-          swift-build-x86_64-linux-android
-
-          ls -la .build/
-
-          #swift test -v --configuration debug
-
